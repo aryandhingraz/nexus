@@ -1,0 +1,373 @@
+/* ============================================================
+   NEXUS shared shell, navigation, utilities, and responsive fixes
+============================================================ */
+:root {
+  /* Shared design tokens used by navigation and common UI pieces. */
+  --bg: #020817;                         /* Main dark background. */
+  --bg-card: rgba(15, 23, 42, 0.6);      /* Semi-transparent card color. */
+  --bg-glass: rgba(30, 41, 59, 0.45);    /* Glass panel background. */
+  --border: rgba(255,255,255,0.08);      /* Subtle dark-theme border. */
+  --border-glow: rgba(45,212,191,0.35);  /* Teal hover/focus border. */
+  --teal: #2DD4BF;                       /* Main brand accent color. */
+  --teal-dim: rgba(45,212,191,0.12);     /* Soft teal background fill. */
+  --text: #e0e3e5;                       /* Primary text color. */
+  --text-muted: #8a9ab5;                 /* Secondary/muted text color. */
+  --font-head: 'Syne', 'Manrope', sans-serif; /* Shared heading font stack. */
+  --font-body: 'DM Sans', 'Inter', sans-serif; /* Shared body font stack. */
+  --radius-sm: 8px;                      /* Small rounded corner token. */
+  --transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1); /* Shared smooth easing. */
+}
+
+html { scroll-padding-top: 88px; } /* Anchor links stop below the fixed navbar. */
+body { overflow-x: hidden; } /* Prevents hover/tilt effects from causing horizontal scroll. */
+img, video, canvas, svg { max-width: 100%; } /* Media never overflows its container. */
+button, a { -webkit-tap-highlight-color: transparent; } /* Removes mobile tap flash. */
+
+.navbar-main {
+  position: fixed; /* Keeps navbar visible while scrolling. */
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 300; /* Above page content and most overlays. */
+  height: 72px; /* Shared desktop navbar height. */
+  display: flex;
+  align-items: center; /* Vertically centers nav content. */
+  padding: 0 32px;
+  background: rgba(2, 8, 23, 0.65); /* Transparent dark surface. */
+  backdrop-filter: blur(20px) saturate(1.6); /* Glass blur behind nav. */
+  -webkit-backdrop-filter: blur(20px) saturate(1.6); /* Safari support. */
+  border-bottom: 1px solid var(--border);
+  box-shadow: 0 1px 0 rgba(255,255,255,0.04); /* Tiny top-light edge. */
+  transition: var(--transition); /* Smooth scrolled state changes. */
+}
+.navbar-main.scrolled {
+  background: rgba(2, 8, 23, 0.92); /* More opaque after scrolling for readability. */
+  box-shadow: 0 4px 32px rgba(0,0,0,0.4); /* Adds depth when content passes underneath. */
+}
+.nav-inner {
+  width: 100%;
+  max-width: 1280px; /* Prevents nav content from stretching too wide. */
+  margin: 0 auto; /* Centers nav content. */
+  display: flex;
+  align-items: center;
+  justify-content: space-between; /* Logo left, links center, actions right. */
+  gap: 24px;
+}
+.nav-logo {
+  display: flex; /* Aligns logo icon and text horizontally. */
+  align-items: center;
+  gap: 10px;
+  text-decoration: none; /* Removes underline from anchor logo. */
+  color: var(--text);
+  flex-shrink: 0; /* Prevents logo from squishing on narrow screens. */
+}
+.nav-logo:hover { color: var(--text); }
+.nav-logo-icon {
+  width: 36px;
+  height: 36px;
+  background: linear-gradient(135deg, var(--teal), #6366f1); /* Brand gradient square. */
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center; /* Centers Material icon inside square. */
+  font-size: 18px;
+  box-shadow: 0 0 20px rgba(45,212,191,0.3); /* Teal glow around logo mark. */
+  flex-shrink: 0;
+}
+.nav-logo-text {
+  font-family: var(--font-head);
+  font-size: 18px;
+  font-weight: 800;
+  letter-spacing: 0;
+  color: var(--text);
+}
+.nav-links {
+  display: flex; /* Desktop links sit in one row. */
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  list-style: none; /* Removes default ul bullets. */
+  margin: 0;
+  padding: 0;
+  min-width: 0; /* Allows flex item to shrink instead of overflowing. */
+}
+.nav-links a {
+  text-decoration: none;
+  color: var(--text-muted); /* Inactive nav link color. */
+  font-size: 13px;
+  font-weight: 500;
+  letter-spacing: 0.04em; /* Gives uppercase nav labels more spacing. */
+  text-transform: uppercase;
+  padding: 8px 14px; /* Click target spacing. */
+  border-radius: var(--radius-sm);
+  transition: var(--transition);
+  white-space: nowrap; /* Prevents link labels from wrapping. */
+}
+.nav-links a:hover,
+.nav-links a.active {
+  color: var(--text);
+  background: rgba(255,255,255,0.06);
+}
+.nav-links a.active { color: var(--teal); }
+.nav-actions-home {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+.nav-cta {
+  padding: 9px 22px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: rgba(255,255,255,0.05);
+  color: var(--text);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: var(--transition);
+  text-decoration: none;
+  white-space: nowrap;
+}
+.nav-cta:hover {
+  background: var(--teal-dim);
+  border-color: var(--border-glow);
+  color: var(--teal);
+}
+.theme-toggle {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%; /* Circular icon button. */
+  border: 1px solid var(--border);
+  background: rgba(255,255,255,0.04);
+  color: var(--text-muted);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center; /* Centers theme icon. */
+  font-size: 18px;
+  transition: var(--transition);
+  flex-shrink: 0;
+}
+.theme-toggle:hover { color: var(--teal); border-color: var(--border-glow); }
+.hamburger {
+  display: none;
+  width: 38px;
+  height: 38px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--text);
+  cursor: pointer;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+  flex-shrink: 0;
+}
+.mobile-menu {
+  display: none; /* Hidden until main.js adds .open. */
+  position: fixed;
+  top: 72px; /* Starts below desktop navbar height. */
+  left: 0;
+  right: 0;
+  background: rgba(2, 8, 23, 0.97);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-bottom: 1px solid var(--border);
+  z-index: 290; /* Slightly below navbar but above page content. */
+  padding: 16px 0;
+  flex-direction: column;
+}
+.mobile-menu.open { display: flex; } /* Open state toggled by main.js. */
+.mobile-menu a {
+  padding: 14px 32px;
+  color: var(--text-muted);
+  text-decoration: none;
+  font-size: 15px;
+  font-weight: 500;
+  border-bottom: 1px solid rgba(255,255,255,0.04);
+  transition: color 0.2s, background 0.2s;
+}
+.mobile-menu a:hover,
+.mobile-menu a.active { color: var(--teal); background: rgba(45,212,191,0.06); }
+.mobile-menu .mobile-launch { color: var(--teal); font-weight: 700; }
+.nav-logo-symbol { font-size: 18px; color: #0b1c30; }
+
+/* Shared icon-size helpers keep inline Material Symbols consistent. */
+.icon-12 { font-size: 12px !important; }
+.icon-13 { font-size: 13px !important; }
+.icon-14 { font-size: 14px !important; }
+.icon-15 { font-size: 15px !important; }
+.icon-16 { font-size: 16px !important; }
+.icon-18 { font-size: 18px !important; }
+.icon-20 { font-size: 20px !important; }
+.icon-22 { font-size: 22px !important; }
+.icon-24 { font-size: 24px !important; }
+.icon-28 { font-size: 28px !important; }
+.icon-56 { font-size: 56px !important; }
+.icon-brand-dark { color: #0b1c30 !important; }
+.icon-teal { color: var(--teal) !important; }
+.icon-muted { color: var(--text-subtle) !important; }
+.icon-filled { font-variation-settings: 'FILL' 1,'wght' 400,'GRAD' 0,'opsz' 24 !important; }
+
+.builder-page { --header-h: 72px; } /* Builder uses shared navbar height as a layout variable. */
+.builder-page .builder-layout { padding-top: 72px; } /* Prevents builder content from hiding under fixed nav. */
+.builder-page .sidebar { top: 72px; } /* Aligns sticky sidebar below fixed nav. */
+.sidebar-save-btn {
+  width: 100%;
+  margin-top: 14px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 10px 14px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: rgba(255,255,255,0.04);
+  color: var(--text-muted);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  transition: var(--transition);
+}
+.sidebar-save-btn:hover {
+  border-color: var(--border-glow);
+  color: var(--teal);
+  background: var(--teal-dim);
+}
+.quick-add-row { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 20px; } /* Wraps quick-add chips neatly. */
+.quick-add-label { font-size: 11px; color: var(--text-subtle); align-self: center; margin-right: 4px; }
+.tag-chip.quick-add-chip { cursor: pointer; background: var(--bg-glass); }
+.section-divider { height: 1px; background: var(--border); margin: 24px 0; }
+.social-step-label { margin-bottom: 16px; color: var(--text-muted); }
+.project-hint { margin-top: 8px; }
+.project-field-row { margin-bottom: 12px; }
+.field-group-tight { margin: 0; }
+.field-group-spaced { margin-bottom: 12px; }
+.preview-person-icon { font-size: 24px !important; color: #2DD4BF; }
+.port-tagline { font-style: italic; margin-bottom: 8px; font-size: 12px; opacity: 0.8; }
+.port-location { font-size: 11px; color: #5a7a9a; margin-top: 8px; }
+.port-socials-spaced { margin-top: 12px; }
+.port-availability {
+  font-size: 11px;
+  padding: 4px 10px;
+  background: rgba(45,212,191,0.1);
+  border: 1px solid rgba(45,212,191,0.2);
+  border-radius: 999px;
+  color: var(--teal);
+  font-weight: 600;
+}
+.shake-once { animation: shake 0.3s ease; } /* Utility class for quick error/attention shake. */
+@keyframes shake {
+  0%,100%{transform:translateX(0)} /* Starts and ends in normal position. */
+  25%{transform:translateX(-6px)} /* Moves left. */
+  75%{transform:translateX(6px)} /* Moves right before settling. */
+}
+.preview-browser.mobile-mode { max-width: 390px; margin: 12px auto; } /* Simulates a phone-width preview. */
+.preview-browser.desktop-mode { max-width: 100%; margin: 12px 16px; } /* Uses wide preview area for desktop mode. */
+.swatch-teal { background: #2DD4BF; }
+.swatch-blue { background: #3b82f6; }
+.swatch-violet { background: #8b5cf6; }
+.swatch-rose { background: #f43f5e; }
+.swatch-amber { background: #f59e0b; }
+.swatch-emerald { background: #10b981; }
+
+.contact-page .navbar-main { z-index: 80; } /* Contact shader/content use their own layering, so nav z-index is lowered. */
+.contact-page .contact-main { padding-top: 7rem !important; } /* Clears fixed navbar on contact page. */
+.contact-page footer { padding-bottom: 1rem !important; } /* Overrides mobile-safe footer spacing for contact page. */
+.project-credit { color: #2DD4BF; font-weight: 700; letter-spacing: 0.04em; text-align: center; }
+.contact-clickable { cursor: pointer; }
+.modal-eyebrow { font-size: 11px; color: var(--teal); font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 4px; }
+.modal-body-pad { padding: 24px 28px; }
+.modal-desc-text { font-size: 14px; color: var(--text-muted); line-height: 1.7; font-weight: 300; }
+.text-teal-inline { color: var(--teal); }
+.port-section-title-tight { margin-bottom: 12px; }
+.port-section-sub-centered { margin: 0 auto; text-align: center; }
+
+@media (max-width: 1100px) {
+  /* Slightly compress desktop nav before switching to hamburger mode. */
+  .navbar-main { padding: 0 24px; }
+  .nav-links a { padding-inline: 10px; font-size: 12px; }
+}
+@media (max-width: 991px) {
+  /* Tablet/mobile nav: hide desktop links/actions and show hamburger. */
+  .nav-links,
+  .nav-cta,
+  .theme-toggle { display: none; }
+  .hamburger { display: flex; }
+  .nav-inner { gap: 12px; }
+}
+@media (max-width: 767px) {
+  /* Phone layout uses a slightly shorter navbar and updates offsets to match. */
+  .navbar-main { height: 68px; padding: 0 18px; }
+  .mobile-menu { top: 68px; }
+  .nav-logo-icon { width: 34px; height: 34px; }
+  .builder-page .builder-layout { padding-top: 68px; }
+  .builder-page .sidebar { top: 68px; }
+  .contact-page .contact-main { padding-top: 6rem !important; }
+}
+
+:root[data-theme="light"],
+html.light {
+  /* Light theme overrides for shared tokens. main.js applies these selectors. */
+  --bg: #f7fafc;
+  --bg-card: rgba(255,255,255,0.92);
+  --bg-glass: rgba(255,255,255,0.78);
+  --border: rgba(15,23,42,0.12);
+  --border-glow: rgba(15,118,110,0.28);
+  --teal: #0f766e;
+  --teal-dim: rgba(15,118,110,0.11);
+  --text: #0f172a;
+  --text-muted: #475569;
+  --text-subtle: #64748b;
+}
+
+:root[data-theme="light"] .navbar-main,
+html.light .navbar-main {
+  /* Light-mode navbar gets a white glass surface instead of dark glass. */
+  background: rgba(255,255,255,0.82);
+  border-bottom-color: rgba(15,23,42,0.1);
+  box-shadow: 0 8px 28px rgba(15,23,42,0.08);
+}
+:root[data-theme="light"] .navbar-main.scrolled,
+html.light .navbar-main.scrolled {
+  background: rgba(255,255,255,0.96);
+  box-shadow: 0 10px 34px rgba(15,23,42,0.12);
+}
+:root[data-theme="light"] .nav-links a:hover,
+:root[data-theme="light"] .nav-links a.active,
+html.light .nav-links a:hover,
+html.light .nav-links a.active {
+  background: rgba(15,118,110,0.09);
+}
+:root[data-theme="light"] .nav-cta,
+html.light .nav-cta {
+  background: #0f766e;
+  border-color: #0f766e;
+  color: #ffffff;
+}
+:root[data-theme="light"] .nav-cta:hover,
+html.light .nav-cta:hover {
+  background: #115e59;
+  border-color: #115e59;
+  color: #ffffff;
+}
+:root[data-theme="light"] .theme-toggle,
+html.light .theme-toggle,
+:root[data-theme="light"] .hamburger,
+html.light .hamburger {
+  background: rgba(15,23,42,0.04);
+  border-color: rgba(15,23,42,0.12);
+  color: #334155;
+}
+:root[data-theme="light"] .mobile-menu,
+html.light .mobile-menu {
+  /* Mobile menu also switches to a light surface when theme is light. */
+  background: rgba(255,255,255,0.97);
+  border-bottom-color: rgba(15,23,42,0.1);
+  box-shadow: 0 20px 36px rgba(15,23,42,0.12);
+}
+:root[data-theme="light"] .mobile-menu a,
+html.light .mobile-menu a {
+  border-bottom-color: rgba(15,23,42,0.08);
+}

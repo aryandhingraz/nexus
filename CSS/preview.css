@@ -1,0 +1,991 @@
+/* ============================================================
+       DESIGN TOKENS
+
+       These CSS custom properties are the page's shared design values.
+       Using variables keeps colors, fonts, animation timing, and shadows
+       consistent across many sections. preview.js also updates some of
+       these variables when the user chooses a different portfolio theme.
+    ============================================================ */
+    :root {
+      --bg:          #020817;
+      --bg-card:     rgba(12,22,42,0.8);
+      --bg-glass:    rgba(20,35,58,0.55);
+      --border:      rgba(255,255,255,0.07);
+      --border-glow: rgba(45,212,191,0.3);
+      --teal:        #2DD4BF;
+      --teal-dim:    rgba(45,212,191,0.1);
+      --teal-mid:    rgba(45,212,191,0.2);
+      --text:        #e2e8f0;
+      --text-muted:  #7a8fa8;
+      --text-subtle: #344a63;
+      --font-head:   'Syne', sans-serif;
+      --font-body:   'DM Sans', sans-serif;
+      --header-h:    72px;
+      --transition:  all 0.32s cubic-bezier(0.4,0,0.2,1);
+      --shadow-deep: 0 40px 80px rgba(2,8,23,0.7);
+    }
+    /* Light mode overrides only the core variables. The rest of the CSS keeps
+       using var(...), so the whole interface changes theme without duplicating
+       every component rule. */
+    [data-theme="light"] {
+      --bg:       #f0f4ff;
+      --bg-card:  rgba(255,255,255,0.9);
+      --bg-glass: rgba(240,244,255,0.85);
+      --border:   rgba(0,0,0,0.07);
+      --text:     #0f172a;
+      --text-muted:#475569;
+      --text-subtle:#94a3b8;
+    }
+
+    /* ============================================================
+       BASE
+    ============================================================ */
+    /* border-box makes width calculations predictable: padding and border are
+       included inside the declared width instead of making elements overflow. */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--font-body);
+      font-size: 15px;
+      line-height: 1.6;
+      /* Prevents tiny horizontal scroll caused by animated glows, cards,
+         and off-screen decorative elements. */
+      overflow-x: hidden;
+    }
+    ::selection { background: var(--teal); color: #000; }
+    /* Google Material Symbols are icon fonts. These settings choose the
+       outlined style and keep icons vertically aligned with nearby text. */
+    .material-symbols-outlined {
+      font-variation-settings:'FILL' 0,'wght' 400,'GRAD' 0,'opsz' 24;
+      vertical-align: middle; line-height: 1;
+    }
+
+    /* ============================================================
+       PARTICLES CANVAS
+
+       The particles are drawn by preview.js on this canvas. fixed + inset: 0
+       pins it to the viewport, while pointer-events: none keeps it decorative
+       so it never blocks buttons, links, scrolling, or hover states.
+    ============================================================ */
+    #particles-canvas {
+      position: fixed; inset: 0;
+      width: 100%; height: 100%;
+      z-index: 0; pointer-events: none;
+    }
+    /* Ambient blobs are soft color fields behind the content. The heavy blur
+       removes hard edges so they feel like light, not separate UI objects. */
+    .ambient-blob {
+      position: fixed; border-radius: 50%;
+      filter: blur(100px); pointer-events: none; z-index: 0;
+    }
+    .blob-a {
+      width: 700px; height: 700px; top: -200px; left: -200px;
+      background: radial-gradient(circle, rgba(45,212,191,0.04), transparent 70%);
+    }
+    .blob-b {
+      width: 500px; height: 500px; bottom: -100px; right: -100px;
+      background: radial-gradient(circle, rgba(99,102,241,0.04), transparent 70%);
+    }
+
+    /* ============================================================
+       HERO INTRO (above the browser mockup)
+    ============================================================ */
+    /* z-index keeps the intro above the fixed canvas and ambient background. */
+    .preview-intro {
+      position: relative; z-index: 2;
+      padding: calc(var(--header-h) + 56px) 32px 40px;
+      text-align: center;
+    }
+    /* inline-flex keeps the live dot and label aligned as one compact badge. */
+    .intro-badge {
+      display: inline-flex; align-items: center; gap: 7px;
+      padding: 5px 14px; border-radius: 999px;
+      background: var(--teal-dim); border: 1px solid rgba(45,212,191,0.2);
+      margin-bottom: 18px;
+      animation: fadeDown 0.6s ease both;
+    }
+    .intro-badge span { font-size: 10px; font-weight: 700; color: var(--teal); text-transform: uppercase; letter-spacing: 0.1em; }
+    /* The live dot pulse gives a subtle "preview is active" signal. */
+    .intro-badge .live-dot {
+      width: 7px; height: 7px; border-radius: 50%;
+      background: var(--teal); animation: livePulse 2s infinite;
+    }
+    @keyframes livePulse { 0%,100%{box-shadow:0 0 6px var(--teal);}50%{box-shadow:0 0 14px var(--teal);} }
+    .intro-title {
+      font-family: var(--font-head);
+      /* clamp() gives responsive text without letting it become too tiny on
+         phones or too huge on large monitors. */
+      font-size: clamp(32px, 5vw, 60px); font-weight: 800;
+      letter-spacing: 0; margin-bottom: 12px; line-height: 1.05;
+      animation: fadeDown 0.7s ease 0.1s both;
+    }
+    .intro-title .grad {
+      /* background-clip turns the gradient into text color while preserving
+         real selectable text instead of using an image. */
+      background: linear-gradient(135deg, var(--teal), #38bdf8, #818cf8);
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+    }
+    .intro-sub {
+      font-size: 15px; color: var(--text-muted); font-weight: 300;
+      max-width: 480px; margin: 0 auto 28px;
+      animation: fadeDown 0.8s ease 0.2s both;
+    }
+    .intro-stats {
+      display: flex; justify-content: center; gap: 32px; flex-wrap: wrap;
+      animation: fadeDown 0.9s ease 0.3s both;
+    }
+    .istat { text-align: center; }
+    .istat-num { font-family: var(--font-head); font-size: 24px; font-weight: 800; color: var(--teal); letter-spacing: 0; }
+    .istat-lab { font-size: 11px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.07em; font-weight: 600; margin-top: 2px; }
+
+    @keyframes fadeDown { from{opacity:0;transform:translateY(-14px);}to{opacity:1;transform:translateY(0);} }
+
+    /* ============================================================
+       BROWSER MOCKUP SHELL
+    ============================================================ */
+    /* The browser shell is the portfolio preview frame. z-index keeps it above
+       the decorative background, while max-width prevents over-stretching. */
+    .browser-shell-wrap {
+      position: relative; z-index: 2;
+      max-width: 1280px; margin: 0 auto;
+      padding: 0 24px 60px;
+    }
+    /* overflow hidden lets the rounded browser corners clip the preview content
+       cleanly, just like a real browser window. */
+    .browser-shell {
+      border-radius: 18px; overflow: hidden;
+      border: 1px solid rgba(255,255,255,0.08);
+      box-shadow: var(--shadow-deep), 0 0 0 1px rgba(45,212,191,0.05), inset 0 1px 0 rgba(255,255,255,0.06);
+      background: #0a1628;
+    }
+    /* This top strip visually communicates "you are looking at a website
+       preview", not an ordinary content card. */
+    .browser-chrome {
+      background: rgba(8,16,32,0.98);
+      padding: 12px 20px;
+      display: flex; align-items: center; gap: 14px;
+      border-bottom: 1px solid rgba(255,255,255,0.06);
+      overflow: hidden;
+    }
+    .chrome-dots { display: flex; gap: 6px; }
+    .chrome-dots span { width: 12px; height: 12px; border-radius: 50%; }
+    .chrome-dots span:nth-child(1) { background: #ff5f57; }
+    .chrome-dots span:nth-child(2) { background: #febc2e; }
+    .chrome-dots span:nth-child(3) { background: #28c840; }
+    .chrome-nav {
+      display: flex; gap: 6px;
+    }
+    .chrome-nav-btn {
+      width: 24px; height: 24px; border-radius: 5px;
+      background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(255,255,255,0.06);
+      color: var(--text-muted); cursor: pointer;
+      display: flex; align-items: center; justify-content: center; font-size: 13px;
+    }
+    .chrome-url-bar {
+      flex: 1 1 auto; max-width: 400px; min-width: 0;
+      background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(255,255,255,0.06);
+      border-radius: 8px; padding: 6px 14px;
+      display: flex; align-items: center; gap: 7px;
+      font-size: 12px; color: var(--text-muted);
+    }
+    .chrome-actions { margin-left: auto; display: flex; gap: 6px; flex: 0 0 auto; }
+    .chrome-action-btn {
+      width: 28px; height: 28px; border-radius: 6px;
+      background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(255,255,255,0.06);
+      color: var(--text-subtle); cursor: pointer;
+      display: flex; align-items: center; justify-content: center; font-size: 14px;
+      transition: var(--transition);
+    }
+    .chrome-action-btn:hover { color: var(--teal); border-color: var(--border-glow); }
+
+    /* ============================================================
+       PORTFOLIO CANVAS  (inside the browser)
+    ============================================================ */
+    .portfolio-canvas {
+      background: #020817;
+      min-height: 100vh;
+      font-family: var(--font-body);
+      color: #e2e8f0;
+      overflow: hidden;
+    }
+
+    /* ── PORTFOLIO HERO ── */
+    .port-hero {
+      min-height: 100vh;
+      display: flex; align-items: center; justify-content: center;
+      text-align: center;
+      padding: 80px 40px;
+      position: relative; overflow: hidden;
+      background: radial-gradient(ellipse at 50% 0%, rgba(45,212,191,0.07) 0%, transparent 60%);
+    }
+    .port-hero-content { position: relative; z-index: 2; max-width: 760px; }
+    .port-hero-bg {
+      position: absolute; inset: 0; overflow: hidden; pointer-events: none;
+    }
+    /* Animated grid lines in hero */
+    .port-hero-grid {
+      position: absolute; inset: 0;
+      background-image:
+        linear-gradient(rgba(45,212,191,0.04) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(45,212,191,0.04) 1px, transparent 1px);
+      background-size: 60px 60px;
+      animation: gridDrift 20s linear infinite;
+    }
+    @keyframes gridDrift { from{transform:translateY(0);}to{transform:translateY(60px);} }
+    .port-avail-badge {
+      display: inline-flex; align-items: center; gap: 8px;
+      padding: 7px 18px; border-radius: 999px;
+      border: 1px solid rgba(45,212,191,0.2);
+      background: rgba(45,212,191,0.06);
+      font-size: 12px; font-weight: 600; color: var(--teal);
+      margin-bottom: 28px;
+      animation: fadeUp 0.8s ease 0.3s both;
+    }
+    .avail-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--teal); animation: livePulse 2s infinite; }
+    .port-hero-avatar {
+      width: 90px; height: 90px; border-radius: 50%;
+      border: 3px solid rgba(45,212,191,0.35);
+      margin: 0 auto 24px;
+      overflow: hidden; position: relative;
+      background: rgba(45,212,191,0.08);
+      display: flex; align-items: center; justify-content: center;
+      animation: fadeUp 0.8s ease 0.1s both;
+      box-shadow: 0 0 32px rgba(45,212,191,0.15);
+    }
+    .port-hero-avatar img { width: 100%; height: 100%; object-fit: cover; display: none; }
+    .port-hero-avatar .avatar-placeholder { font-size: 36px; }
+    .port-hero-name {
+      font-family: var(--font-head);
+      font-size: clamp(36px, 5vw, 64px); font-weight: 800;
+      letter-spacing: 0; color: #f1f5f9; margin-bottom: 8px;
+      animation: fadeUp 0.8s ease 0.2s both;
+    }
+    .port-hero-title {
+      font-size: 18px; font-weight: 600; color: var(--teal);
+      margin-bottom: 16px;
+      animation: fadeUp 0.8s ease 0.3s both;
+    }
+    .port-hero-tagline {
+      font-size: 15px; font-style: italic; color: #5a7a9a;
+      margin-bottom: 18px;
+      animation: fadeUp 0.8s ease 0.35s both;
+    }
+    .port-hero-bio {
+      font-size: 16px; color: #7a8fa8; font-weight: 300; line-height: 1.8;
+      max-width: 600px; margin: 0 auto 24px;
+      animation: fadeUp 0.8s ease 0.4s both;
+    }
+    .port-hero-meta {
+      display: flex; align-items: center; justify-content: center; gap: 16px;
+      flex-wrap: wrap; margin-bottom: 28px;
+      animation: fadeUp 0.8s ease 0.45s both;
+    }
+    .port-meta-chip {
+      display: flex; align-items: center; gap: 5px;
+      font-size: 12px; color: #4a6484;
+      font-weight: 500;
+    }
+    .port-hero-socials {
+      display: flex; justify-content: center; gap: 10px; flex-wrap: wrap;
+      animation: fadeUp 0.8s ease 0.5s both;
+    }
+    .port-social {
+      display: flex; align-items: center; gap: 6px;
+      padding: 8px 18px; border-radius: 999px;
+      border: 1px solid rgba(255,255,255,0.08);
+      background: rgba(255,255,255,0.03);
+      font-size: 13px; color: #7a8fa8; text-decoration: none;
+      font-weight: 500; transition: var(--transition);
+    }
+    .port-social:hover { border-color: rgba(45,212,191,0.3); color: var(--teal); }
+    .port-hero-scroll-hint {
+      position: absolute; bottom: 32px; left: 50%; transform: translateX(-50%);
+      display: flex; flex-direction: column; align-items: center; gap: 6px;
+      color: var(--text-subtle); font-size: 11px; font-weight: 600;
+      text-transform: uppercase; letter-spacing: 0.1em;
+      animation: fadeUp 1s ease 0.8s both;
+    }
+    .scroll-arrow {
+      width: 24px; height: 24px; border-right: 2px solid var(--text-subtle);
+      border-bottom: 2px solid var(--text-subtle);
+      transform: rotate(45deg);
+      animation: scrollBounce 1.5s ease infinite;
+    }
+    @keyframes scrollBounce { 0%,100%{transform:rotate(45deg) translateY(0);}50%{transform:rotate(45deg) translateY(5px);} }
+    @keyframes fadeUp { from{opacity:0;transform:translateY(20px);}to{opacity:1;transform:translateY(0);} }
+
+    /* ── SECTION WRAPPER ── */
+    .port-section {
+      padding: 100px 40px;
+      max-width: 1100px; margin: 0 auto;
+      position: relative;
+    }
+    .port-section-label {
+      font-size: 11px; font-weight: 700;
+      text-transform: uppercase; letter-spacing: 0.14em;
+      color: var(--teal); margin-bottom: 12px;
+    }
+    .port-section-title {
+      font-family: var(--font-head);
+      font-size: clamp(28px, 4vw, 44px); font-weight: 800;
+      letter-spacing: 0; color: #f1f5f9;
+      margin-bottom: 16px; line-height: 1.1;
+    }
+    .port-section-sub {
+      font-size: 15px; color: #5a7a9a; font-weight: 300;
+      margin-bottom: 60px; max-width: 520px; line-height: 1.7;
+    }
+    .port-divider {
+      height: 1px;
+      background: linear-gradient(90deg, var(--teal), rgba(45,212,191,0.05), transparent);
+      margin-bottom: 0;
+    }
+
+    /* ============================================================
+       RADIAL SCROLL GALLERY  (Skills Wheel)
+
+       Desktop version:
+       preview.js absolutely positions skill cards around an invisible circle.
+       CSS provides the visual styling, hover feel, and layer behavior while
+       GSAP rotates the wheel during scroll.
+
+       Mobile version:
+       preview.js adds .mobile-skills-mode. These rules replace the circular
+       layout with a normal grid, because a phone viewport is too narrow for
+       large cards arranged around a circle without overlap.
+    ============================================================ */
+    .radial-section {
+      position: relative;
+      background: linear-gradient(180deg, #020817 0%, #050f1f 50%, #020817 100%);
+      /* The desktop wheel extends beyond the normal section box while rotating,
+         so visible overflow prevents cards from being clipped. */
+      overflow: visible;
+    }
+    .radial-header {
+      text-align: center; padding: 80px 32px 0;
+      position: relative; z-index: 5;
+    }
+    /* The pinned scroll container. ScrollTrigger pins this element on desktop,
+       so the skills wheel stays in view while scroll progress rotates it. */
+    #radialPin {
+      position: relative;
+      width: 100%; z-index: 3;
+    }
+    .radial-clip {
+      position: relative; width: 100%; overflow: visible;
+      /* The mask is intentionally disabled because the circular skill cards
+         need room to pass beyond the center stage during rotation. */
+      -webkit-mask-image: none;
+      mask-image: none;
+    }
+    /* The spinning wheel UL. JavaScript gives it a width/height equal to the
+       circle diameter, then each skill is positioned from its center point. */
+    #radialWheel {
+      position: absolute;
+      left: 50%; transform: translateX(-50%);
+      list-style: none; margin: 0; padding: 0;
+      /* will-change hints that transform will animate, helping the browser
+         prepare a smoother composited animation. */
+      will-change: transform;
+      transition: opacity 0.5s ease;
+    }
+    /* Each skill item starts at the wheel center. JavaScript translates it
+       outward to its calculated circular position. */
+    .skill-node {
+      position: absolute;
+      top: 50%; left: 50%;
+      cursor: pointer;
+      outline: none;
+    }
+    .skill-card {
+      background: rgba(15,25,48,0.85);
+      /* backdrop-filter gives the card a glassy depth over the dark animated
+         background while preserving readable contrast. */
+      backdrop-filter: blur(16px);
+      border: 1px solid rgba(255,255,255,0.07);
+      border-radius: 20px;
+      padding: 28px 34px;
+      min-width: 210px;
+      text-align: center;
+      transition: all 0.4s cubic-bezier(0.4,0,0.2,1);
+      /* transform-origin:center makes hover scale and JS counter-rotation feel
+         balanced instead of stretching from a corner. */
+      transform-origin: center;
+    }
+    .skill-card:hover {
+      background: rgba(30,50,90,0.9);
+      border-color: rgba(45,212,191,0.4);
+      box-shadow: 0 0 24px rgba(45,212,191,0.2);
+      /* Scale plus upward movement makes hover feel like the card lifts toward
+         the user. */
+      transform: scale(1.15) translateY(-8px);
+    }
+    .skill-icon {
+      width: 68px; height: 68px; border-radius: 16px;
+      background: rgba(45,212,191,0.1);
+      border: 1px solid rgba(45,212,191,0.15);
+      /* flex centers the icon perfectly inside the square regardless of which
+         Material Symbol is used. */
+      display: flex; align-items: center; justify-content: center;
+      margin: 0 auto 16px; font-size: 26px; color: var(--teal);
+    }
+    .skill-icon-symbol { font-size: 32px; }
+    .skill-name {
+      font-family: var(--font-head);
+      font-size: 18px; font-weight: 700;
+      /* nowrap prevents skill names from breaking awkwardly inside rotating
+         desktop cards. Mobile uses narrower card styling below. */
+      color: #e2e8f0; white-space: nowrap;
+    }
+    .skill-level {
+      font-size: 14px; color: #4a6484; margin-top: 7px; font-weight: 500;
+    }
+    .tooltip-accent { color: var(--teal); }
+    /* Center label of the wheel. pointer-events:none lets mouse movement pass
+       through to the rotating skill cards underneath. */
+    .wheel-center-label {
+      position: absolute; left: 50%; top: 50%;
+      transform: translate(-50%, -50%);
+      text-align: center; pointer-events: none; z-index: 10;
+    }
+    .wheel-center-label h3 {
+      font-family: var(--font-head); font-size: 14px; font-weight: 700;
+      color: var(--teal); text-transform: uppercase; letter-spacing: 0.1em;
+    }
+    .wheel-center-label p { font-size: 11px; color: var(--text-subtle); }
+
+    /* Highlighted skill tooltip. fixed positioning follows the viewport, so
+       the tooltip can track the cursor even while the section is pinned. */
+    .skill-tooltip {
+      position: fixed; z-index: 999;
+      background: rgba(10,20,40,0.95);
+      backdrop-filter: blur(12px);
+      border: 1px solid rgba(45,212,191,0.3);
+      border-radius: 12px; padding: 12px 18px;
+      font-size: 13px; color: var(--text);
+      /* pointer-events:none prevents the tooltip from stealing hover and
+         causing flicker when it appears near the cursor. */
+      pointer-events: none; opacity: 0;
+      transition: opacity 0.2s;
+      box-shadow: 0 8px 32px rgba(2,8,23,0.6);
+    }
+
+    /* Mobile skills mode starts here. It deliberately disables the circular
+       desktop geometry and lets the cards live in normal page flow. */
+    .mobile-skills-mode {
+      overflow: hidden;
+    }
+    .mobile-skills-mode .radial-header {
+      padding: 60px 20px 18px;
+    }
+    .mobile-skills-mode #radialPin {
+      padding: 0 18px 64px;
+    }
+    .mobile-skills-mode .radial-clip {
+      /* max-width keeps the grid readable on wider phones while margin auto
+         centers it inside the section. */
+      max-width: 430px;
+      margin: 0 auto;
+    }
+    .mobile-skills-mode #radialWheel {
+      /* position:static removes absolute wheel behavior. The grid now takes up
+         real document height, so following sections are pushed down correctly. */
+      position: static;
+      display: grid;
+      /* minmax(0,1fr) prevents long skill names from forcing columns wider
+         than the phone screen. */
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 12px;
+      transform: none;
+      width: 100%;
+      list-style: none;
+    }
+    .mobile-skills-mode .wheel-center-label {
+      /* !important wins over inline styles added by JavaScript for the desktop
+         center label. Mobile needs this label to sit above the grid. */
+      position: static !important;
+      transform: none !important;
+      width: 100% !important;
+      margin: 0 auto 18px;
+    }
+    .mobile-skills-mode .mobile-skill-node {
+      /* Cards start slightly lower and transparent. IntersectionObserver adds
+         .show, producing a gentle upward reveal. */
+      position: static;
+      transform: translateY(18px);
+      opacity: 0;
+      scale: 1;
+      animation: none;
+      transition: opacity 0.45s ease, transform 0.45s ease;
+      /* --delay is assigned per card in preview.js to create the stagger. */
+      transition-delay: var(--delay);
+    }
+    .mobile-skills-mode .mobile-skill-node.show {
+      opacity: 1;
+      transform: translateY(0);
+    }
+    .mobile-skills-mode .mobile-skill-card {
+      /* min-width:0 is important in CSS Grid. It allows cards to shrink inside
+         narrow columns instead of overflowing the viewport. */
+      width: 100%;
+      min-width: 0;
+      min-height: 122px;
+      padding: 16px 12px;
+      border-radius: 16px;
+      /* A vertical flex layout keeps icon, skill name, and level centered. */
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+    .mobile-skills-mode .mobile-skill-node.active .mobile-skill-card,
+    .mobile-skills-mode .mobile-skill-card:hover {
+      background: rgba(30,50,90,0.95);
+      border-color: rgba(45,212,191,0.45);
+      box-shadow: 0 0 22px rgba(45,212,191,0.16);
+      /* The selected/touched card moves just enough to feel interactive
+         without causing the grid layout to jump. */
+      transform: translateY(-3px);
+    }
+
+    /* ============================================================
+       EXPERIENCE SECTION
+    ============================================================ */
+    /* The timeline uses left padding so the vertical line and dots can sit
+       beside the cards without covering the text. */
+    .exp-timeline { position: relative; padding-left: 32px; }
+    .exp-timeline::before {
+      content: '';
+      position: absolute; left: 7px; top: 8px; bottom: 8px; width: 2px;
+      /* The fading gradient makes the timeline feel active near the top and
+         softer near the bottom. */
+      background: linear-gradient(to bottom, var(--teal), rgba(45,212,191,0.1));
+    }
+    .exp-item {
+      position: relative; margin-bottom: 48px;
+      /* Hidden starting state for the reveal animation. preview.js adds
+         .visible when the item enters the viewport. */
+      opacity: 0; transform: translateX(-20px);
+      transition: all 0.6s cubic-bezier(0.4,0,0.2,1);
+    }
+    .exp-item.visible { opacity: 1; transform: translateX(0); }
+    .exp-dot {
+      position: absolute; left: -28px; top: 6px;
+      width: 16px; height: 16px; border-radius: 50%;
+      background: var(--teal); border: 3px solid #020817;
+      box-shadow: 0 0 12px rgba(45,212,191,0.4);
+    }
+    .exp-card {
+      background: rgba(12,22,44,0.6);
+      border: 1px solid rgba(255,255,255,0.06);
+      border-radius: 16px; padding: 24px 28px;
+      transition: var(--transition);
+    }
+    .exp-card-muted { opacity: 0.6; }
+    .exp-card:hover { border-color: rgba(45,212,191,0.2); transform: translateX(4px); }
+    .exp-role { font-family: var(--font-head); font-size: 18px; font-weight: 700; color: #f1f5f9; margin-bottom: 4px; }
+    .exp-company-row { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; flex-wrap: wrap; }
+    .exp-company { font-size: 14px; color: var(--teal); font-weight: 600; }
+    .exp-period {
+      font-size: 12px; color: #344a63; font-weight: 600;
+      padding: 3px 10px; border-radius: 999px;
+      background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.06);
+    }
+    .exp-desc { font-size: 14px; color: #5a7a9a; line-height: 1.7; font-weight: 300; }
+    .exp-techs { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 14px; }
+    .exp-tech {
+      font-size: 11px; padding: 3px 10px; border-radius: 999px;
+      background: rgba(45,212,191,0.06); border: 1px solid rgba(45,212,191,0.12);
+      color: var(--teal); font-weight: 600;
+    }
+
+    /* ============================================================
+       PROJECTS — BENTO GRID
+    ============================================================ */
+    .projects-bento {
+      display: grid;
+      grid-template-columns: repeat(6, 1fr);
+      gap: 16px;
+    }
+    .proj-card {
+      border-radius: 18px; overflow: hidden;
+      background: rgba(12,22,44,0.6);
+      border: 1px solid rgba(255,255,255,0.06);
+      position: relative;
+      opacity: 0; transform: translateY(20px);
+      transition: all 0.6s cubic-bezier(0.4,0,0.2,1);
+    }
+    .proj-card.visible { opacity: 1; transform: translateY(0); }
+    .proj-card:hover { border-color: rgba(45,212,191,0.25); transform: translateY(-4px); }
+    .proj-card:hover .proj-card-glow { opacity: 1; }
+    .proj-delay-0 { transition-delay: 0s; }
+    .proj-delay-1 { transition-delay: 0.08s; }
+    .proj-delay-2 { transition-delay: 0.16s; }
+    .proj-delay-3 { transition-delay: 0.24s; }
+    .proj-delay-4 { transition-delay: 0.32s; }
+    .proj-delay-5 { transition-delay: 0.4s; }
+    .proj-card-glow {
+      position: absolute; inset: 0; border-radius: 18px;
+      background: radial-gradient(circle at 30% 30%, rgba(45,212,191,0.05), transparent 60%);
+      opacity: 0; transition: opacity 0.4s; pointer-events: none;
+    }
+    .proj-card-1 { grid-column: span 4; min-height: 280px; }
+    .proj-card-2 { grid-column: span 2; min-height: 280px; }
+    .proj-card-3 { grid-column: span 2; min-height: 220px; }
+    .proj-card-4 { grid-column: span 2; min-height: 220px; }
+    .proj-card-5 { grid-column: span 2; min-height: 220px; }
+    .proj-card-6 { grid-column: span 3; min-height: 180px; }
+    .proj-card-7 { grid-column: span 3; min-height: 180px; }
+
+    .proj-thumb {
+      width: 100%; height: 180px; overflow: hidden; position: relative;
+    }
+    .proj-thumb img {
+      width: 100%; height: 100%; object-fit: cover;
+      filter: brightness(0.55) saturate(0.8);
+      transition: transform 0.6s ease, filter 0.4s;
+    }
+    .proj-card:hover .proj-thumb img { transform: scale(1.06); filter: brightness(0.75) saturate(1.1); }
+    .proj-thumb-overlay {
+      position: absolute; inset: 0;
+      background: linear-gradient(to top, rgba(2,8,23,1) 0%, transparent 60%);
+    }
+    .proj-body { padding: 18px 20px; }
+    .proj-name { font-family: var(--font-head); font-size: 16px; font-weight: 800; color: #f1f5f9; margin-bottom: 6px; }
+    .proj-desc { font-size: 13px; color: #5a7a9a; line-height: 1.6; font-weight: 300; margin-bottom: 12px; }
+    .proj-tags { display: flex; gap: 5px; flex-wrap: wrap; }
+    .proj-tag {
+      font-size: 10px; padding: 3px 9px; border-radius: 999px;
+      background: rgba(99,102,241,0.08); border: 1px solid rgba(99,102,241,0.15);
+      color: #a5b4fc; font-weight: 600;
+    }
+    .proj-links { display: flex; gap: 8px; margin-top: 14px; }
+    .proj-link {
+      display: flex; align-items: center; gap: 5px;
+      padding: 6px 14px; border-radius: 999px;
+      font-size: 11px; font-weight: 700; text-decoration: none;
+      transition: var(--transition);
+    }
+    .proj-link-primary { background: var(--teal); color: #0b1c30; }
+    .proj-link-primary:hover { box-shadow: 0 0 16px rgba(45,212,191,0.4); }
+    .proj-link-secondary { border: 1px solid rgba(255,255,255,0.1); color: #5a7a9a; }
+    .proj-link-secondary:hover { border-color: rgba(45,212,191,0.3); color: var(--teal); }
+
+    /* Compact project card (no image) */
+    .proj-compact { padding: 24px; display: flex; flex-direction: column; justify-content: space-between; height: 100%; }
+    .proj-compact-icon {
+      width: 44px; height: 44px; border-radius: 12px;
+      background: rgba(45,212,191,0.08); border: 1px solid rgba(45,212,191,0.15);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 20px; color: var(--teal); margin-bottom: 14px;
+    }
+
+    /* ============================================================
+       CONTACT SECTION
+    ============================================================ */
+    .contact-grid {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 32px;
+    }
+    .contact-info { display: flex; flex-direction: column; gap: 20px; }
+    .contact-item {
+      display: flex; align-items: center; gap: 16px;
+      padding: 18px 20px; border-radius: 14px;
+      background: rgba(12,22,44,0.5); border: 1px solid rgba(255,255,255,0.06);
+      transition: var(--transition);
+    }
+    .contact-item:hover { border-color: rgba(45,212,191,0.25); }
+    .contact-item-icon {
+      width: 44px; height: 44px; border-radius: 12px;
+      background: rgba(45,212,191,0.08); border: 1px solid rgba(45,212,191,0.15);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 20px; color: var(--teal); flex-shrink: 0;
+    }
+    .contact-item-label { font-size: 10px; color: var(--text-subtle); text-transform: uppercase; letter-spacing: 0.08em; font-weight: 700; }
+    .contact-item-val { font-size: 14px; color: var(--text); font-weight: 500; margin-top: 2px; }
+    .contact-form-stub {
+      background: rgba(12,22,44,0.5); border: 1px solid rgba(255,255,255,0.06);
+      border-radius: 18px; padding: 28px;
+    }
+    .contact-form-title { font-family: var(--font-head); font-size: 18px; font-weight: 700; margin-bottom: 20px; }
+    .cform-field { margin-bottom: 14px; }
+    .cform-field label { display: block; font-size: 11px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.06em; font-weight: 700; margin-bottom: 6px; }
+    .cform-field input, .cform-field textarea {
+      width: 100%; background: rgba(0,0,0,0.2);
+      border: 1px solid rgba(255,255,255,0.07); border-radius: 8px;
+      padding: 11px 14px; color: var(--text); font-family: var(--font-body);
+      font-size: 13px; outline: none; transition: border-color 0.2s;
+    }
+    .cform-field input:focus, .cform-field textarea:focus { border-color: rgba(45,212,191,0.4); }
+    .cform-field textarea { resize: none; min-height: 80px; }
+    .cform-submit {
+      width: 100%; padding: 12px;
+      background: linear-gradient(135deg, var(--teal), #0ea5e9);
+      border: none; border-radius: 999px;
+      color: #0b1c30; font-weight: 700; font-size: 14px;
+      cursor: pointer; transition: var(--transition);
+    }
+    .cform-submit:hover { box-shadow: 0 0 20px rgba(45,212,191,0.4); transform: translateY(-1px); }
+
+    /* ── Portfolio footer ── */
+    .port-footer {
+      background: rgba(2,8,23,0.9);
+      border-top: 1px solid rgba(255,255,255,0.05);
+      padding: 40px; text-align: center;
+    }
+    .port-footer-name { font-family: var(--font-head); font-size: 20px; font-weight: 800; color: var(--teal); margin-bottom: 8px; }
+    .port-footer-copy { font-size: 12px; color: #344a63; font-weight: 500; }
+
+    /* ============================================================
+       BOTTOM META BAR (below browser)
+    ============================================================ */
+    .meta-bar {
+      position: relative; z-index: 2;
+      max-width: 1280px; margin: 0 auto;
+      padding: 0 24px 40px;
+    }
+    .meta-bar-inner {
+      /* backdrop-filter creates a frosted panel effect while still letting the
+         dark background influence the color behind it. */
+      background: rgba(12,22,44,0.6);
+      backdrop-filter: blur(16px);
+      border: 1px solid rgba(255,255,255,0.06);
+      border-radius: 18px; padding: 24px 32px;
+      display: flex; align-items: center; justify-content: space-between;
+      /* wrap keeps the action buttons from squeezing the stats on tablets
+         and small laptops. */
+      flex-wrap: wrap; gap: 20px;
+    }
+    .meta-stats { display: flex; gap: 32px; flex-wrap: wrap; }
+    /* .meta-stat-item {} */
+    .meta-stat-label { font-size: 10px; color: var(--text-subtle); text-transform: uppercase; letter-spacing: 0.1em; font-weight: 700; }
+    .meta-stat-val { font-family: var(--font-head); font-size: 22px; font-weight: 800; color: var(--teal); letter-spacing: 0; }
+    .meta-actions { display: flex; gap: 10px; flex-wrap: wrap; }
+    .meta-btn {
+      display: flex; align-items: center; gap: 6px;
+      padding: 10px 22px; border-radius: 999px;
+      font-size: 13px; font-weight: 700; cursor: pointer;
+      text-decoration: none; transition: var(--transition);
+    }
+    .meta-btn-primary { background: linear-gradient(135deg, var(--teal), #0ea5e9); border: none; color: #0b1c30; }
+    .meta-btn-primary:hover { box-shadow: 0 0 20px rgba(45,212,191,0.4); transform: translateY(-1px); }
+    .meta-btn-secondary { border: 1px solid rgba(255,255,255,0.1); background: transparent; color: var(--text-muted); }
+    .meta-btn-secondary:hover { border-color: var(--border-glow); color: var(--text); }
+
+    /* FAB */
+    /* Floating action button. fixed positioning keeps "edit" reachable even
+       after the user scrolls far down the preview page. */
+    .fab {
+      position: fixed; bottom: 32px; right: 32px; z-index: 500;
+      width: 56px; height: 56px; border-radius: 50%;
+      background: linear-gradient(135deg, var(--teal), #0ea5e9);
+      border: none; color: #0b1c30; font-size: 22px;
+      cursor: pointer; display: flex; align-items: center; justify-content: center;
+      box-shadow: 0 8px 24px rgba(45,212,191,0.35);
+      transition: var(--transition); text-decoration: none;
+    }
+    .fab:hover { transform: scale(1.1); box-shadow: 0 12px 32px rgba(45,212,191,0.5); }
+
+    /* ============================================================
+       FOOTER (outer)
+    ============================================================ */
+    .page-footer {
+      position: relative; z-index: 2;
+      border-top: 1px solid var(--border);
+      padding: 28px 32px; background: rgba(2,8,23,0.9);
+      display: flex; align-items: center; justify-content: space-between;
+      flex-wrap: wrap; gap: 12px;
+    }
+    .pf-logo { font-family: var(--font-head); font-size: 15px; font-weight: 800; color: var(--text); display: flex; align-items: center; gap: 8px; }
+    .pf-copy { font-size: 12px; color: var(--text-muted); }
+    .pf-links { display: flex; gap: 18px; }
+    .pf-links a { font-size: 11px; color: var(--text-subtle); text-decoration: none; text-transform: uppercase; letter-spacing: 0.06em; font-weight: 600; transition: color 0.2s; }
+    .pf-links a:hover { color: var(--teal); }
+
+    /* ============================================================
+       SCROLL REVEALS (for sections outside radial)
+
+       JavaScript controls when .visible is added. CSS controls what the reveal
+       looks like: start lower and transparent, then move to the natural
+       position while fading in.
+    ============================================================ */
+    .sr { opacity: 0; transform: translateY(32px); transition: opacity 0.7s ease, transform 0.7s ease; }
+    .sr.visible { opacity: 1; transform: translateY(0); }
+    .sr-d1 { transition-delay: 0.1s; } .sr-d2 { transition-delay: 0.18s; } .sr-d3 { transition-delay: 0.26s; }
+
+    /* ============================================================
+       RESPONSIVE
+
+       These breakpoints progressively simplify dense layouts. The goal is not
+       just "make it smaller"; it is to preserve readable cards, comfortable
+       spacing, and predictable scrolling on narrow screens.
+    ============================================================ */
+    @media (max-width: 900px) {
+      /* Bento cards become equal-width tiles on tablets so mixed grid spans do
+         not create awkward narrow columns. */
+      .projects-bento { grid-template-columns: repeat(2,1fr); }
+      .proj-card-1,.proj-card-2,.proj-card-3,.proj-card-4,.proj-card-5,.proj-card-6,.proj-card-7 { grid-column: span 1; }
+      .contact-grid { grid-template-columns: 1fr; }
+      .port-section { padding: 60px 24px; }
+    }
+    @media (max-width: 767px) {
+      /* The mobile header is shorter, so sections using --header-h can reduce
+         their top spacing automatically. */
+      :root { --header-h: 68px; }
+    }
+    @media (max-width: 600px) {
+      /* One-column projects avoid cramped card text on phones. */
+      .projects-bento { grid-template-columns: 1fr; }
+      .browser-shell { border-radius: 10px; }
+      .browser-shell-wrap { padding: 0 12px 40px; }
+      .browser-chrome { gap: 6px; padding: 10px; }
+      .chrome-nav { display: none; }
+      .chrome-nav-btn { display: none; }
+      .chrome-url-bar { padding: 6px 10px; font-size: 11px; overflow: hidden; white-space: nowrap; }
+      .chrome-url-bar span:last-child { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+      .chrome-actions { gap: 4px; }
+      .chrome-action-btn { width: 26px; height: 26px; }
+      .meta-bar { padding: 0 12px 32px; }
+      .meta-bar-inner { padding: 20px; }
+      /* These card sizes support the mobile skills grid and also keep any
+         fallback skill cards readable if JavaScript loads slowly. */
+      .skill-card { min-width: 136px; padding: 18px 20px; border-radius: 16px; }
+      .skill-icon { width: 48px; height: 48px; border-radius: 13px; margin-bottom: 10px; }
+      .skill-icon-symbol { font-size: 24px; }
+      .skill-name { font-size: 13px; }
+      .skill-level { font-size: 11px; }
+    }
+
+/* Extracted former inline style utilities.
+   These small utility classes replaced repeated inline style attributes in the
+   HTML, making the markup cleaner while preserving the exact icon/text sizes. */
+.u-preview-1 { font-size:14px;color:#0b1c30; }
+.u-preview-2 { font-size:15px; }
+.u-preview-3 { font-size:13px; }
+.u-preview-4 { font-size:12px; }
+.u-preview-5 { font-size:12px;color:var(--teal); }
+.u-preview-6 { font-size:14px; }
+.u-preview-7 { font-size:16px; }
+.u-preview-8 { font-size:22px; }
+.u-preview-9 { color:var(--teal);font-size:16px; }
+
+[data-theme="light"] {
+  /* Light theme mirrors the root token approach. Only variables and targeted
+     surfaces change, so the component structure stays identical. */
+  --bg: #f7fafc;
+  --bg-card: rgba(255,255,255,0.92);
+  --bg-glass: rgba(255,255,255,0.8);
+  --border: rgba(15,23,42,0.12);
+  --border-glow: rgba(15,118,110,0.28);
+  --teal: #0f766e;
+  --teal-dim: rgba(15,118,110,0.11);
+  --teal-mid: rgba(15,118,110,0.2);
+  --text: #0f172a;
+  --text-muted: #475569;
+  --text-subtle: #64748b;
+  --shadow-deep: 0 30px 70px rgba(15,23,42,0.14);
+}
+[data-theme="light"] body {
+  background:
+    radial-gradient(circle at 15% -10%, rgba(15,118,110,0.1), transparent 30%),
+    radial-gradient(circle at 90% 0%, rgba(37,99,235,0.08), transparent 28%),
+    var(--bg);
+}
+[data-theme="light"] .browser-shell,
+[data-theme="light"] .meta-bar-inner {
+  background: rgba(255,255,255,0.9);
+  border-color: rgba(15,23,42,0.12);
+}
+[data-theme="light"] .browser-chrome {
+  background: rgba(248,250,252,0.96);
+  border-bottom-color: rgba(15,23,42,0.1);
+}
+[data-theme="light"] .chrome-nav-btn,
+[data-theme="light"] .chrome-url-bar,
+[data-theme="light"] .chrome-action-btn {
+  background: rgba(15,23,42,0.05);
+  border-color: rgba(15,23,42,0.1);
+  color: var(--text-muted);
+}
+[data-theme="light"] .portfolio-canvas,
+[data-theme="light"] .radial-section {
+  background: linear-gradient(180deg, #f8fafc 0%, #eaf1f7 50%, #f8fafc 100%);
+  color: var(--text);
+}
+[data-theme="light"] .port-hero {
+  background: radial-gradient(ellipse at 50% 0%, rgba(15,118,110,0.1) 0%, transparent 60%);
+}
+[data-theme="light"] .port-hero-name,
+[data-theme="light"] .port-section-title,
+[data-theme="light"] .skill-name,
+[data-theme="light"] .exp-role,
+[data-theme="light"] .proj-name,
+[data-theme="light"] .contact-item-val,
+[data-theme="light"] .pf-logo {
+  color: var(--text);
+}
+[data-theme="light"] .port-hero-bio,
+[data-theme="light"] .port-hero-tagline,
+[data-theme="light"] .port-section-sub,
+[data-theme="light"] .port-social,
+[data-theme="light"] .port-meta-chip,
+[data-theme="light"] .skill-level,
+[data-theme="light"] .exp-desc,
+[data-theme="light"] .proj-desc,
+[data-theme="light"] .proj-link-secondary,
+[data-theme="light"] .pf-copy {
+  color: var(--text-muted);
+}
+[data-theme="light"] .port-social,
+[data-theme="light"] .skill-card,
+[data-theme="light"] .exp-card,
+[data-theme="light"] .proj-card,
+[data-theme="light"] .contact-item,
+[data-theme="light"] .contact-form-stub {
+  background: rgba(255,255,255,0.84);
+  border-color: rgba(15,23,42,0.1);
+}
+[data-theme="light"] .skill-card:hover {
+  background: rgba(255,255,255,0.96);
+}
+[data-theme="light"] .exp-dot {
+  border-color: #f8fafc;
+}
+[data-theme="light"] .exp-period,
+[data-theme="light"] .proj-tag {
+  background: rgba(15,23,42,0.05);
+  border-color: rgba(15,23,42,0.1);
+  color: var(--text-muted);
+}
+[data-theme="light"] .cform-field input,
+[data-theme="light"] .cform-field textarea {
+  background: rgba(255,255,255,0.88);
+  border-color: rgba(15,23,42,0.12);
+  color: var(--text);
+}
+[data-theme="light"] .port-footer,
+[data-theme="light"] .page-footer {
+  background: rgba(255,255,255,0.86);
+  border-color: rgba(15,23,42,0.1);
+}
+[data-theme="light"] .proj-link-primary,
+[data-theme="light"] .cform-submit,
+[data-theme="light"] .meta-btn-primary,
+[data-theme="light"] .fab {
+  color: #ffffff;
+}
+[data-theme="light"] .meta-btn-secondary {
+  border-color: rgba(15,23,42,0.12);
+}
+
+[data-theme="light"] {
+  --teal: #0f766e !important;
+  --teal-dim: rgba(15,118,110,0.11) !important;
+  --teal-mid: rgba(15,118,110,0.2) !important;
+  --border-glow: rgba(15,118,110,0.28) !important;
+}

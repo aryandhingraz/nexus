@@ -1,0 +1,645 @@
+/* ============================================================
+       TOKENS
+    ============================================================ */
+    :root {
+      /* Design tokens: reusable values that keep the gallery visually consistent. */
+      --bg:         #020817;                 /* Main dark background. */
+      --bg-card:    rgba(12, 20, 38, 0.75);  /* Card surface with transparency. */
+      --bg-glass:   rgba(20, 32, 55, 0.5);   /* Glass panel background for blur layers. */
+      --border:     rgba(255,255,255,0.07);  /* Subtle border for dark UI. */
+      --border-glow:rgba(45,212,191,0.3);    /* Teal border for hover/active states. */
+      --teal:       #2DD4BF;                 /* Main accent color. */
+      --teal-dim:   rgba(45,212,191,0.1);    /* Soft teal background. */
+      --teal-mid:   rgba(45,212,191,0.18);   /* Slightly stronger teal background. */
+      --text:       #e2e8f0;                 /* Primary readable text color. */
+      --text-muted: #7a8fa8;                 /* Secondary text color. */
+      --text-subtle:#344a63;                 /* Quiet helper text color. */
+      --font-head:  'Syne', sans-serif;      /* Display font for titles and card names. */
+      --font-body:  'DM Sans', sans-serif;   /* Body/UI font. */
+      --radius-sm:  8px;                     /* Small radius for buttons. */
+      --radius-md:  16px;                    /* Medium radius for cards. */
+      --radius-lg:  24px;                    /* Large radius for modals/CTA. */
+      --header-h:   68px;                    /* Navbar height used by sticky sections. */
+      --transition: all 0.32s cubic-bezier(0.4,0,0.2,1); /* Shared smooth animation timing. */
+    }
+    [data-theme="light"] {
+      --bg:       #f0f4ff;
+      --bg-card:  rgba(255,255,255,0.85);
+      --bg-glass: rgba(240,244,255,0.8);
+      --border:   rgba(0,0,0,0.07);
+      --text:     #0f172a;
+      --text-muted:#4a5568;
+      --text-subtle:#94a3b8;
+    }
+
+    /* ============================================================
+       BASE
+    ============================================================ */
+    /* border-box makes width/height calculations include padding and border. */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    /* Smooth anchor scrolling if links target sections. */
+    html { scroll-behavior: smooth; }
+    body {
+      background: var(--bg);         /* Uses theme background token. */
+      color: var(--text);            /* Default page text color. */
+      font-family: var(--font-body); /* Applies readable UI font. */
+      font-size: 15px;               /* Slightly compact gallery text size. */
+      line-height: 1.6;              /* Comfortable paragraph spacing. */
+      overflow-x: hidden;            /* Prevents hover transforms from creating horizontal scroll. */
+      min-height: 100vh;             /* Page always fills at least one viewport. */
+    }
+    ::selection { background: var(--teal); color: #000; }
+    .material-symbols-outlined {
+      font-variation-settings:'FILL' 0,'wght' 400,'GRAD' 0,'opsz' 24;
+      vertical-align: middle; line-height: 1;
+    }
+
+    /* ============================================================
+       CANVAS LAYERS
+    ============================================================ */
+    #shader-canvas {
+      position: fixed; inset: 0;     /* Fixed full-screen background layer. */
+      width: 100%; height: 100%;     /* Fills viewport. */
+      z-index: 0; pointer-events: none; /* Behind content and never blocks clicks. */
+      opacity: 0.3;                  /* Keeps shader subtle behind text/cards. */
+    }
+    #particles-canvas {
+      position: fixed; inset: 0;     /* Second full-screen visual layer. */
+      width: 100%; height: 100%;     /* Matches viewport size. */
+      z-index: 1; pointer-events: none; /* Above shader, below page content. */
+    }
+    /* Floating mesh blobs */
+    .blob {
+      position: fixed; border-radius: 50%; /* Circular decorative background shape. */
+      filter: blur(90px); pointer-events: none; z-index: 0; /* Big soft mesh glow that never blocks input. */
+    }
+    .blob-1 {
+      width: 600px; height: 600px;
+      background: radial-gradient(circle, rgba(45,212,191,0.05), transparent 70%);
+      top: -200px; right: -150px;
+    }
+    .blob-2 {
+      width: 500px; height: 500px;
+      background: radial-gradient(circle, rgba(99,102,241,0.04), transparent 70%);
+      bottom: -150px; left: -100px;
+    }
+
+
+    /* ============================================================
+       HERO HEADER
+    ============================================================ */
+    .page-hero {
+      padding: calc(var(--header-h) + 72px) 0 56px; /* Adds navbar height plus extra top spacing. */
+      position: relative; z-index: 2; text-align: center; /* Keeps hero above canvases and centers text. */
+    }
+    .page-hero-badge {
+      display: inline-flex; align-items: center; gap: 8px; /* Aligns badge contents horizontally. */
+      padding: 5px 16px; border-radius: 999px; /* Pill shape with comfortable padding. */
+      background: var(--teal-dim); border: 1px solid rgba(45,212,191,0.2); /* Subtle teal badge styling. */
+      margin-bottom: 22px; /* Separates badge from page title. */
+      animation: fadeDown 0.7s ease both; /* Entrance animation when page loads. */
+    }
+    .page-hero-badge span { font-size: 11px; font-weight: 700; color: var(--teal); text-transform: uppercase; letter-spacing: 0.1em; }
+    .page-title {
+      font-family: var(--font-head);
+      font-size: clamp(40px, 6vw, 72px);
+      font-weight: 800; letter-spacing: 0;
+      line-height: 1.0; margin-bottom: 18px;
+      animation: fadeDown 0.8s ease 0.1s both;
+    }
+    .page-title .grad {
+      background: linear-gradient(135deg, var(--teal) 0%, #38bdf8 50%, #6366f1 100%);
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    .page-sub {
+      font-size: 17px; color: var(--text-muted); font-weight: 300;
+      max-width: 520px; margin: 0 auto 40px; line-height: 1.7;
+      animation: fadeDown 0.9s ease 0.2s both;
+    }
+
+    /* Stats row */
+    .stats-row {
+      display: flex; align-items: center; justify-content: center;
+      gap: 40px; flex-wrap: wrap;
+      animation: fadeDown 1s ease 0.3s both;
+    }
+    .stat-pill {
+      display: flex; align-items: center; gap: 10px;
+      padding: 8px 20px; border-radius: 999px;
+      background: var(--bg-glass);
+      backdrop-filter: blur(12px);
+      border: 1px solid var(--border);
+    }
+    .stat-pill-icon { font-size: 18px; color: var(--teal); }
+    .stat-pill-text { font-size: 13px; font-weight: 600; }
+    .stat-pill-text strong { color: var(--teal); }
+
+    /* ============================================================
+       FILTER BAR
+    ============================================================ */
+    .filter-section {
+      position: sticky; top: var(--header-h); /* Filter bar sticks below fixed navbar while scrolling. */
+      z-index: 100;                           /* Keeps filters above gallery cards. */
+      background: rgba(2,8,23,0.7);           /* Transparent dark surface. */
+      backdrop-filter: blur(20px);            /* Blurs content passing behind sticky bar. */
+      border-bottom: 1px solid var(--border); /* Separates filter bar from gallery. */
+      padding: 0;
+    }
+    [data-theme="light"] .filter-section { background: rgba(240,244,255,0.85); }
+    .filter-inner {
+      max-width: 1280px; margin: 0 auto;      /* Centers filter controls in same width as gallery. */
+      padding: 14px 32px;                     /* Horizontal and vertical spacing. */
+      display: flex; align-items: center; gap: 12px; /* Flexible row layout for filters. */
+      flex-wrap: wrap;                        /* Allows controls to wrap on smaller screens. */
+    }
+    .filter-label {
+      font-size: 11px; font-weight: 700;
+      text-transform: uppercase; letter-spacing: 0.1em;
+      color: var(--text-subtle); flex-shrink: 0;
+      margin-right: 4px;
+    }
+    .filter-btns { display: flex; gap: 6px; flex-wrap: wrap; flex: 1; }
+    .filter-btn {
+      padding: 7px 18px; border-radius: 999px; /* Pill filter buttons. */
+      border: 1px solid var(--border);         /* Default quiet outline. */
+      background: transparent; color: var(--text-muted); /* Neutral inactive style. */
+      font-size: 12px; font-weight: 600;       /* Compact uppercase-like UI label. */
+      cursor: pointer; transition: var(--transition); /* Pointer and smooth hover/active change. */
+      font-family: var(--font-body);
+      display: flex; align-items: center; gap: 6px; /* Aligns label and count badge. */
+    }
+    .filter-btn .count {
+      font-size: 10px;
+      background: rgba(255,255,255,0.07);
+      padding: 1px 6px; border-radius: 999px;
+      color: var(--text-subtle);
+    }
+    .filter-btn:hover { border-color: var(--border-glow); color: var(--teal); background: var(--teal-dim); }
+    .filter-btn.active {
+      background: var(--teal); border-color: var(--teal); /* Active filter gets full brand fill. */
+      color: #0b1c30; font-weight: 700; /* Dark text contrasts with bright teal. */
+    }
+    .filter-btn.active .count { background: rgba(0,0,0,0.15); color: #0b1c30; }
+
+    /* Sort / View controls */
+    .filter-controls { display: flex; gap: 8px; margin-left: auto; align-items: center; }
+    .sort-select {
+      padding: 7px 14px; border-radius: 8px;
+      border: 1px solid var(--border);
+      background: var(--bg-glass); color: var(--text-muted);
+      font-size: 12px; font-weight: 600; font-family: var(--font-body);
+      cursor: pointer; outline: none; transition: var(--transition);
+    }
+    .sort-select:focus { border-color: var(--border-glow); }
+    .view-btn {
+      width: 32px; height: 32px; border-radius: 7px;
+      border: 1px solid var(--border); background: transparent;
+      color: var(--text-subtle); cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      transition: var(--transition); font-size: 16px;
+    }
+    .view-btn.active, .view-btn:hover { border-color: var(--border-glow); color: var(--teal); background: var(--teal-dim); }
+
+    /* ============================================================
+       GRID / LIST LAYOUT
+    ============================================================ */
+    .templates-section {
+      position: relative; z-index: 2; /* Places gallery content above visual canvas layers. */
+      max-width: 1280px; margin: 0 auto; /* Centers the gallery and limits line length. */
+      padding: 48px 32px 80px; /* Top spacing after filters and bottom page breathing room. */
+    }
+
+    .results-header {
+      display: flex; align-items: center; justify-content: space-between;
+      margin-bottom: 28px;
+    }
+    .results-count {
+      font-size: 13px; color: var(--text-muted); font-weight: 500;
+    }
+    .results-count strong { color: var(--text); }
+
+    /* Grid */
+    .templates-grid {
+      display: grid; /* CSS Grid creates equal-width card columns. */
+      grid-template-columns: repeat(3, 1fr); /* Three equal columns on desktop. */
+      gap: 24px; /* Space between template cards. */
+      transition: var(--transition); /* Smooth change when switching layouts. */
+    }
+    .templates-grid.list-view {
+      grid-template-columns: 1fr; /* List view becomes one full-width column. */
+      gap: 14px; /* Tighter spacing suits horizontal rows. */
+    }
+    @media (max-width: 1100px) { .templates-grid { grid-template-columns: repeat(2, 1fr); } }
+    @media (max-width: 640px) { .templates-grid { grid-template-columns: 1fr; } }
+
+    /* ============================================================
+       TEMPLATE CARD
+    ============================================================ */
+    .tmpl-card {
+      border-radius: var(--radius-md); /* Rounded gallery card corners. */
+      overflow: hidden;                /* Clips image/overlay to rounded card. */
+      position: relative;              /* Allows internal absolute overlays. */
+      display: flex; flex-direction: column; /* Stacks thumbnail above card body. */
+      background: var(--bg-card);      /* Semi-transparent dark card surface. */
+      border: 1px solid var(--border); /* Subtle outline. */
+      backdrop-filter: blur(12px);     /* Glass blur effect. */
+      transition: var(--transition);   /* Smooth hover movement and border change. */
+      cursor: pointer;                 /* Signals card is interactive. */
+    }
+    .tmpl-card:hover {
+      border-color: var(--border-glow); /* Teal outline on hover. */
+      transform: translateY(-6px);      /* Lifts card upward for depth. */
+      box-shadow: 0 24px 56px rgba(2,8,23,0.5), 0 0 0 1px rgba(45,212,191,0.08); /* Large shadow plus teal rim. */
+    }
+    .tmpl-card.hidden { display: none; }
+
+    /* Thumbnail */
+    .tmpl-thumb {
+      position: relative; overflow: hidden; /* Holds image overlays and clips zoomed image. */
+      aspect-ratio: 16/9; /* Keeps thumbnails in a consistent widescreen shape. */
+    }
+    .tmpl-thumb img {
+      width: 100%; height: 100%; object-fit: cover; /* Image fills thumbnail without distortion. */
+      transition: transform 0.7s cubic-bezier(0.4,0,0.2,1); /* Smooth hover zoom. */
+      filter: brightness(0.65) saturate(0.9); /* Darkens and slightly mutes image for overlay readability. */
+    }
+    .tmpl-card:hover .tmpl-thumb img {
+      transform: scale(1.07);
+      filter: brightness(0.8) saturate(1.1);
+    }
+    /* Gradient overlay */
+    .tmpl-thumb-overlay {
+      position: absolute; inset: 0;
+      background: linear-gradient(to top, rgba(2,8,23,0.95) 0%, rgba(2,8,23,0.2) 50%, transparent 100%);
+    }
+    /* Category badge on image */
+    .tmpl-cat-badge {
+      position: absolute; top: 12px; left: 12px;
+      padding: 4px 12px; border-radius: 999px;
+      font-size: 10px; font-weight: 700; letter-spacing: 0.08em;
+      text-transform: uppercase; backdrop-filter: blur(10px);
+      border: 1px solid rgba(255,255,255,0.12);
+    }
+    /* NEW badge */
+    .tmpl-new-badge {
+      position: absolute; top: 12px; right: 12px;
+      padding: 3px 10px; border-radius: 999px;
+      font-size: 9px; font-weight: 800; letter-spacing: 0.1em;
+      text-transform: uppercase;
+      background: linear-gradient(135deg, var(--teal), #38bdf8);
+      color: #0b1c30;
+    }
+    /* Popularity bar */
+    .tmpl-popularity {
+      position: absolute; bottom: 0; left: 0; right: 0;
+      height: 3px; background: rgba(255,255,255,0.05);
+    }
+    .tmpl-popularity-fill {
+      height: 100%; border-radius: 999px;
+      background: linear-gradient(90deg, var(--teal), #38bdf8);
+      transition: width 1s ease;
+    }
+
+    /* Preview hover overlay */
+    .tmpl-preview-overlay {
+      position: absolute; inset: 0; /* Covers the full thumbnail. */
+      display: flex; align-items: center; justify-content: center; /* Centers preview/use buttons. */
+      background: rgba(2,8,23,0.7); /* Dark overlay on hover. */
+      backdrop-filter: blur(4px);   /* Softens image behind overlay buttons. */
+      opacity: 0; transition: opacity 0.3s ease; /* Hidden until card hover. */
+      gap: 10px; /* Space between overlay buttons. */
+    }
+    .tmpl-card:hover .tmpl-preview-overlay { opacity: 1; }
+    .overlay-btn {
+      display: flex; align-items: center; gap: 6px;
+      padding: 9px 18px; border-radius: 999px;
+      font-size: 12px; font-weight: 700;
+      cursor: pointer; transition: var(--transition);
+      border: none; text-decoration: none;
+    }
+    .overlay-btn-primary {
+      background: var(--teal); color: #0b1c30;
+    }
+    .overlay-btn-primary:hover { background: #3ff0da; box-shadow: 0 0 20px rgba(45,212,191,0.5); }
+    .overlay-btn-secondary {
+      background: rgba(255,255,255,0.1); color: var(--text);
+      border: 1px solid rgba(255,255,255,0.15);
+    }
+    .overlay-btn-secondary:hover { background: rgba(255,255,255,0.18); }
+
+    /* Card body */
+    .tmpl-body {
+      padding: 18px 20px 20px; flex: 1;
+      display: flex; flex-direction: column;
+    }
+    .tmpl-head {
+      display: flex; align-items: flex-start;
+      justify-content: space-between; margin-bottom: 8px;
+    }
+    .tmpl-name {
+      font-family: var(--font-head);
+      font-size: 17px; font-weight: 800; letter-spacing: 0;
+    }
+    .tmpl-rating {
+      display: flex; align-items: center; gap: 3px;
+      font-size: 11px; color: #fbbf24; font-weight: 700; flex-shrink: 0;
+    }
+    .tmpl-desc {
+      font-size: 13px; color: var(--text-muted);
+      line-height: 1.6; font-weight: 300; margin-bottom: 14px; flex: 1;
+    }
+    .tmpl-tags { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 16px; }
+    .tmpl-tag {
+      font-size: 10px; font-weight: 600; padding: 3px 9px;
+      border-radius: 999px; border: 1px solid var(--border);
+      background: rgba(255,255,255,0.03); color: var(--text-subtle);
+    }
+    .tmpl-footer {
+      display: flex; align-items: center; gap: 8px;
+    }
+    .tmpl-uses {
+      font-size: 11px; color: var(--text-subtle);
+      display: flex; align-items: center; gap: 4px;
+    }
+    .btn-use {
+      flex: 1; padding: 10px; border-radius: var(--radius-sm);
+      background: linear-gradient(135deg, var(--teal), #0ea5e9);
+      color: #0b1c30; font-weight: 700; font-size: 13px;
+      border: none; cursor: pointer; transition: var(--transition);
+      text-decoration: none; display: flex; align-items: center;
+      justify-content: center; gap: 6px;
+    }
+    .btn-use:hover { box-shadow: 0 0 20px rgba(45,212,191,0.4); transform: translateY(-1px); }
+    .btn-preview-sm {
+      width: 38px; height: 38px; border-radius: var(--radius-sm);
+      border: 1px solid var(--border); background: transparent;
+      color: var(--text-muted); cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      transition: var(--transition); font-size: 16px;
+    }
+    .btn-preview-sm:hover { border-color: var(--border-glow); color: var(--teal); background: var(--teal-dim); }
+
+    /* ============================================================
+       LIST VIEW CARD
+    ============================================================ */
+    .templates-grid.list-view .tmpl-card {
+      flex-direction: row; align-items: stretch;
+    }
+    .templates-grid.list-view .tmpl-thumb {
+      width: 240px; flex-shrink: 0;
+      aspect-ratio: auto; min-height: 140px;
+    }
+    .templates-grid.list-view .tmpl-body {
+      flex-direction: row; align-items: center; gap: 20px; flex-wrap: wrap;
+    }
+    .templates-grid.list-view .tmpl-head { flex-direction: column; flex: 1; }
+    .templates-grid.list-view .tmpl-tags { margin-bottom: 0; }
+    .templates-grid.list-view .tmpl-footer { margin-left: auto; flex-shrink: 0; }
+    .templates-grid.list-view .tmpl-card:hover { transform: translateX(4px) translateY(0); }
+
+    /* ============================================================
+       FEATURED TEMPLATE (larger card)
+    ============================================================ */
+    .tmpl-card.featured {
+      grid-column: span 2;
+    }
+    .tmpl-card.featured .tmpl-thumb { aspect-ratio: 21/9; }
+    @media (max-width: 1100px) { .tmpl-card.featured { grid-column: span 1; } }
+
+    /* ============================================================
+       EMPTY STATE
+    ============================================================ */
+    .empty-state {
+      grid-column: 1 / -1;
+      text-align: center; padding: 80px 32px;
+      color: var(--text-subtle);
+    }
+    .empty-state .material-symbols-outlined { font-size: 56px; margin-bottom: 12px; opacity: 0.3; }
+    .empty-state h3 { font-family: var(--font-head); font-size: 22px; font-weight: 700; margin-bottom: 8px; color: var(--text-muted); }
+    .empty-state p { font-size: 14px; font-weight: 300; }
+
+    /* ============================================================
+       PREVIEW MODAL
+    ============================================================ */
+    .modal-overlay {
+      display: none; position: fixed; inset: 0; /* Hidden full-screen overlay by default. */
+      background: rgba(2,8,23,0.85); /* Darkens page behind modal. */
+      backdrop-filter: blur(12px);   /* Blurs background content for focus. */
+      z-index: 1000;                 /* Sits above the whole page. */
+      align-items: center; justify-content: center; padding: 24px; /* Centers modal with edge spacing. */
+    }
+    .modal-overlay.open { display: flex; animation: modalFadeIn 0.3s ease; }
+    @keyframes modalFadeIn {
+      from { opacity: 0; } /* Overlay starts transparent. */
+      to   { opacity: 1; } /* Overlay fades in fully. */
+    }
+    .modal-box {
+      background: #0d1a2e;           /* Solid modal surface for readability. */
+      border: 1px solid var(--border-glow); /* Teal outline connects modal to brand. */
+      border-radius: var(--radius-lg);      /* Large rounded dialog corners. */
+      width: 100%; max-width: 920px;        /* Responsive modal with desktop max width. */
+      max-height: 90vh; overflow: hidden;   /* Prevents modal from exceeding viewport. */
+      display: flex; flex-direction: column;/* Header, body, footer stack vertically. */
+      box-shadow: 0 40px 80px rgba(2,8,23,0.8), 0 0 0 1px rgba(45,212,191,0.06); /* Deep focus shadow. */
+      animation: modalSlideUp 0.35s cubic-bezier(0.4,0,0.2,1); /* Dialog rises into place. */
+    }
+    @keyframes modalSlideUp {
+      from { transform: translateY(30px); opacity: 0; } /* Starts lower and invisible. */
+      to   { transform: translateY(0); opacity: 1; } /* Ends in place and visible. */
+    }
+    .modal-header {
+      padding: 18px 24px;
+      border-bottom: 1px solid var(--border);
+      display: flex; align-items: center; gap: 16px;
+    }
+    .modal-header h2 { font-family: var(--font-head); font-size: 20px; font-weight: 800; }
+    .modal-close {
+      margin-left: auto; width: 34px; height: 34px; border-radius: 8px;
+      border: 1px solid var(--border); background: transparent;
+      color: var(--text-muted); cursor: pointer; font-size: 18px;
+      display: flex; align-items: center; justify-content: center;
+      transition: var(--transition);
+    }
+    .modal-close:hover { color: var(--text); border-color: var(--border-glow); }
+    .modal-body { flex: 1; overflow: auto; }
+    .modal-body img {
+      width: 100%; display: block;
+      filter: brightness(0.9);
+    }
+    .modal-footer {
+      padding: 16px 24px;
+      border-top: 1px solid var(--border);
+      display: flex; align-items: center; gap: 12px;
+    }
+    .modal-footer p { font-size: 13px; color: var(--text-muted); flex: 1; }
+    .modal-use-btn {
+      display: flex; align-items: center; gap: 8px;
+      padding: 11px 26px; border-radius: 999px;
+      background: linear-gradient(135deg, var(--teal), #0ea5e9);
+      color: #0b1c30; font-weight: 700; font-size: 14px;
+      border: none; cursor: pointer; transition: var(--transition);
+      text-decoration: none;
+    }
+    .modal-use-btn:hover { box-shadow: 0 0 24px rgba(45,212,191,0.4); transform: translateY(-1px); }
+
+    /* ============================================================
+       CTA BANNER
+    ============================================================ */
+    .cta-banner {
+      position: relative; z-index: 2;
+      max-width: 1280px; margin: 0 auto 80px;
+      padding: 0 32px;
+    }
+    .cta-banner-inner {
+      border-radius: var(--radius-lg);
+      padding: 56px 48px;
+      display: flex; align-items: center; justify-content: space-between;
+      gap: 32px; flex-wrap: wrap;
+      background: var(--bg-glass);
+      backdrop-filter: blur(16px);
+      border: 1px solid var(--border);
+      position: relative; overflow: hidden;
+    }
+    .cta-banner-inner::before {
+      content: '';
+      position: absolute; top: -60px; right: -60px;
+      width: 300px; height: 300px; border-radius: 50%;
+      background: radial-gradient(circle, rgba(45,212,191,0.1), transparent 70%);
+      pointer-events: none;
+    }
+    .cta-banner-text h2 {
+      font-family: var(--font-head);
+      font-size: clamp(24px, 3vw, 36px); font-weight: 800;
+      letter-spacing: 0; margin-bottom: 8px;
+    }
+    .cta-banner-text p { font-size: 15px; color: var(--text-muted); font-weight: 300; }
+    .cta-banner-actions { display: flex; gap: 12px; flex-wrap: wrap; }
+    .btn-cta-primary {
+      display: flex; align-items: center; gap: 8px;
+      padding: 13px 28px; border-radius: 999px;
+      background: linear-gradient(135deg, var(--teal), #0ea5e9);
+      color: #0b1c30; font-weight: 700; font-size: 14px;
+      border: none; cursor: pointer; transition: var(--transition);
+      text-decoration: none;
+    }
+    .btn-cta-primary:hover { box-shadow: 0 0 28px rgba(45,212,191,0.4); transform: translateY(-2px); }
+    .btn-cta-secondary {
+      display: flex; align-items: center; gap: 8px;
+      padding: 13px 28px; border-radius: 999px;
+      border: 1px solid var(--border);
+      background: transparent; color: var(--text-muted);
+      font-weight: 600; font-size: 14px;
+      cursor: pointer; transition: var(--transition);
+      text-decoration: none;
+    }
+    .btn-cta-secondary:hover { border-color: var(--border-glow); color: var(--text); }
+
+    /* ============================================================
+       FOOTER
+    ============================================================ */
+    footer {
+      position: relative; z-index: 2;
+      border-top: 1px solid var(--border);
+      padding: 32px 0;
+      background: rgba(2,8,23,0.8);
+    }
+    .footer-inner {
+      max-width: 1280px; margin: 0 auto; padding: 0 32px;
+      display: flex; align-items: center; justify-content: space-between;
+      flex-wrap: wrap; gap: 16px;
+    }
+    .footer-logo { display: flex; align-items: center; gap: 8px; text-decoration: none; color: var(--text); }
+    .footer-logo-text { font-family: var(--font-head); font-size: 15px; font-weight: 800; }
+    .footer-copy { font-size: 12px; color: var(--text-muted); margin-top: 3px; }
+    .footer-links { display: flex; gap: 20px; }
+    .footer-links a { font-size: 12px; color: var(--text-subtle); text-decoration: none; text-transform: uppercase; letter-spacing: 0.05em; font-weight: 600; transition: color 0.2s; }
+    .footer-links a:hover { color: var(--teal); }
+
+    /* ============================================================
+       SCROLL REVEAL
+    ============================================================ */
+    .reveal {
+      opacity: 0; transform: translateY(28px); /* Starts hidden and shifted downward. */
+      transition: opacity 0.6s cubic-bezier(0.4,0,0.2,1), transform 0.6s cubic-bezier(0.4,0,0.2,1); /* Smooth reveal animation. */
+    }
+    .reveal.visible { opacity: 1; transform: translateY(0); } /* Final visible state added by JS. */
+    .d1 { transition-delay: 0.05s; } .d2 { transition-delay: 0.1s; } /* Small stagger delays for card reveal. */
+    .d3 { transition-delay: 0.15s; } .d4 { transition-delay: 0.2s; } /* More delay for later cards. */
+    .d5 { transition-delay: 0.25s; } .d6 { transition-delay: 0.3s; } /* Longest delays for final visible cards. */
+
+    /* ============================================================
+       KEYFRAMES
+    ============================================================ */
+    @keyframes fadeDown {
+      from { opacity: 0; transform: translateY(-16px); } /* Starts above and transparent. */
+      to   { opacity: 1; transform: translateY(0); } /* Drops into normal position. */
+    }
+
+    /* ============================================================
+       CUSTOM CURSOR
+    ============================================================ */
+    #cursor-dot {
+      position: fixed; pointer-events: none; z-index: 9999;
+      width: 8px; height: 8px; border-radius: 50%;
+      background: var(--teal);
+      transform: translate(-50%,-50%);
+      transition: width 0.2s, height 0.2s, opacity 0.2s;
+      opacity: 0;
+    }
+    #cursor-ring {
+      position: fixed; pointer-events: none; z-index: 9998;
+      width: 32px; height: 32px; border-radius: 50%;
+      border: 1.5px solid rgba(45,212,191,0.4);
+      transform: translate(-50%,-50%);
+      transition: all 0.12s ease;
+    }
+    body:hover #cursor-dot { opacity: 1; }
+
+    @media (pointer: coarse) {
+      #cursor-dot,
+      #cursor-ring { display: none; }
+    }
+
+    @media (max-width: 991px) {
+      .filter-controls { display: none; }
+      .filter-inner { padding: 10px 20px; }
+      .templates-section { padding: 32px 20px 60px; }
+      .cta-banner { padding: 0 20px; }
+      .cta-banner-inner { padding: 36px 28px; }
+    }
+    @media (max-width: 767px) {
+      .templates-grid.list-view .tmpl-card { flex-direction: column; }
+      .templates-grid.list-view .tmpl-thumb { width: 100%; min-height: auto; }
+    }
+    @media (max-width: 420px) {
+      .nav-logo-text {
+        max-width: calc(100vw - 128px);
+        overflow: visible;
+        text-overflow: clip;
+        white-space: nowrap;
+        font-size: 15px;
+      }
+    }
+
+/* Extracted former inline style utilities */
+.u-templates-1 { font-size:13px;color:var(--teal); }
+.u-templates-2 { font-size:14px; }
+.u-templates-3 { font-size:15px; }
+.u-templates-4 { background:rgba(45,212,191,0.15);border-color:rgba(45,212,191,0.3);color:#2DD4BF; }
+.u-templates-5 { width:94%; }
+.u-templates-6 { font-size:13px; }
+.u-templates-7 { font-size:16px; }
+.u-templates-8 { background:rgba(244,63,94,0.15);border-color:rgba(244,63,94,0.3);color:#fb7185; }
+.u-templates-9 { width:82%; }
+.u-templates-10 { background:rgba(245,158,11,0.15);border-color:rgba(245,158,11,0.3);color:#fbbf24; }
+.u-templates-11 { width:74%; }
+.u-templates-12 { width:88%; }
+.u-templates-13 { background:rgba(139,92,246,0.15);border-color:rgba(139,92,246,0.3);color:#a78bfa; }
+.u-templates-14 { width:68%; }
+.u-templates-15 { background:rgba(16,185,129,0.15);border-color:rgba(16,185,129,0.3);color:#34d399; }
+.u-templates-16 { width:58%; }
+.u-templates-17 { display:none; }
+.u-templates-18 { font-size:18px; }
+.u-templates-19 { color:var(--teal);font-size:18px; }

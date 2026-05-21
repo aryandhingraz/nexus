@@ -1,0 +1,1724 @@
+<!DOCTYPE html>
+<!--
+  templates.html is the template gallery page.
+  It displays filterable portfolio templates, supports grid/list views,
+  and opens preview modals using data attributes stored on each card.
+-->
+<html lang="en" data-theme="dark">
+<head>
+  <!-- UTF-8 supports normal text, symbols, and icon characters. -->
+  <meta charset="UTF-8" />
+  <!-- viewport makes the gallery responsive on phones, tablets, and desktops. -->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Template Gallery — Smart Portfolio Builder</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%232DD4BF'/%3E%3Ctext x='32' y='42' text-anchor='middle' font-family='Arial,sans-serif' font-size='28' font-weight='700' fill='%23020817'%3EN%3C/text%3E%3C/svg%3E" />
+  <!-- preconnect improves Google Fonts loading by opening network connections early. -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <!-- Loads heading/body fonts and Material Symbols icons. -->
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600&family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet" />
+  <!-- Bootstrap provides shared responsive layout utilities. -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" />
+
+  <style>
+    /* ============================================================
+       TOKENS
+    ============================================================ */
+    :root {
+      --bg:         #020817;
+      --bg-card:    rgba(12, 20, 38, 0.75);
+      --bg-glass:   rgba(20, 32, 55, 0.5);
+      --border:     rgba(255,255,255,0.07);
+      --border-glow:rgba(45,212,191,0.3);
+      --teal:       #2DD4BF;
+      --teal-dim:   rgba(45,212,191,0.1);
+      --teal-mid:   rgba(45,212,191,0.18);
+      --text:       #e2e8f0;
+      --text-muted: #7a8fa8;
+      --text-subtle:#344a63;
+      --font-head:  'Syne', sans-serif;
+      --font-body:  'DM Sans', sans-serif;
+      --radius-sm:  8px;
+      --radius-md:  16px;
+      --radius-lg:  24px;
+      --header-h:   68px;
+      --transition: all 0.32s cubic-bezier(0.4,0,0.2,1);
+    }
+    [data-theme="light"] {
+      --bg:       #f0f4ff;
+      --bg-card:  rgba(255,255,255,0.85);
+      --bg-glass: rgba(240,244,255,0.8);
+      --border:   rgba(0,0,0,0.07);
+      --text:     #0f172a;
+      --text-muted:#4a5568;
+      --text-subtle:#94a3b8;
+    }
+
+    /* ============================================================
+       BASE
+    ============================================================ */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--font-body);
+      font-size: 15px;
+      line-height: 1.6;
+      overflow-x: hidden;
+      min-height: 100vh;
+    }
+    ::selection { background: var(--teal); color: #000; }
+    .material-symbols-outlined {
+      font-variation-settings:'FILL' 0,'wght' 400,'GRAD' 0,'opsz' 24;
+      vertical-align: middle; line-height: 1;
+    }
+
+    /* ============================================================
+       CANVAS LAYERS
+    ============================================================ */
+    #shader-canvas {
+      position: fixed; inset: 0;
+      width: 100%; height: 100%;
+      z-index: 0; pointer-events: none;
+      opacity: 0.3;
+    }
+    #particles-canvas {
+      position: fixed; inset: 0;
+      width: 100%; height: 100%;
+      z-index: 1; pointer-events: none;
+    }
+    /* Floating mesh blobs */
+    .blob {
+      position: fixed; border-radius: 50%;
+      filter: blur(90px); pointer-events: none; z-index: 0;
+    }
+    .blob-1 {
+      width: 600px; height: 600px;
+      background: radial-gradient(circle, rgba(45,212,191,0.05), transparent 70%);
+      top: -200px; right: -150px;
+    }
+    .blob-2 {
+      width: 500px; height: 500px;
+      background: radial-gradient(circle, rgba(99,102,241,0.04), transparent 70%);
+      bottom: -150px; left: -100px;
+    }
+
+    /* ============================================================
+       NAVBAR
+    ============================================================ */
+    .navbar-main {
+      position: fixed; top: 0; left: 0; right: 0;
+      height: var(--header-h); z-index: 200;
+      display: flex; align-items: center;
+      padding: 0 32px; gap: 16px;
+      background: rgba(2,8,23,0.78);
+      backdrop-filter: blur(22px) saturate(1.5);
+      border-bottom: 1px solid var(--border);
+      transition: var(--transition);
+    }
+    .navbar-main.scrolled {
+      background: rgba(2,8,23,0.95);
+      box-shadow: 0 4px 32px rgba(0,0,0,0.4);
+    }
+    .nav-logo {
+      display: flex; align-items: center; gap: 10px;
+      text-decoration: none; color: var(--text); flex-shrink: 0;
+    }
+    .nav-logo-icon {
+      width: 34px; height: 34px;
+      background: linear-gradient(135deg, var(--teal), #6366f1);
+      border-radius: 9px;
+      display: flex; align-items: center; justify-content: center;
+      box-shadow: 0 0 18px rgba(45,212,191,0.28);
+    }
+    .nav-logo-text {
+      font-family: var(--font-head);
+      font-size: 17px; font-weight: 800; letter-spacing: 0;
+    }
+    .nav-divider { width: 1px; height: 26px; background: var(--border); }
+    .nav-page-title {
+      font-family: var(--font-head);
+      font-size: 14px; font-weight: 700; color: var(--teal);
+    }
+    .nav-links {
+      list-style: none; display: flex; align-items: center; gap: 2px; margin: 0 0 0 auto;
+    }
+    .nav-links a {
+      text-decoration: none; color: var(--text-muted);
+      font-size: 12px; font-weight: 600;
+      letter-spacing: 0.05em; text-transform: uppercase;
+      padding: 7px 13px; border-radius: 6px;
+      transition: var(--transition);
+    }
+    .nav-links a:hover, .nav-links a.active { color: var(--text); background: rgba(255,255,255,0.05); }
+    .nav-links a.active { color: var(--teal); }
+    .nav-actions { display: flex; align-items: center; gap: 8px; }
+    .nav-btn {
+      padding: 8px 18px; border-radius: 999px;
+      border: 1px solid var(--border);
+      background: transparent; color: var(--text-muted);
+      font-size: 12px; font-weight: 600; letter-spacing: 0.04em;
+      cursor: pointer; text-decoration: none; text-transform: uppercase;
+      transition: var(--transition);
+    }
+    .nav-btn:hover { border-color: var(--border-glow); color: var(--teal); background: var(--teal-dim); }
+    .nav-btn-cta {
+      background: linear-gradient(135deg, var(--teal), #0ea5e9);
+      border-color: transparent; color: #0b1c30; font-weight: 700;
+    }
+    .nav-btn-cta:hover { box-shadow: 0 0 18px rgba(45,212,191,0.35); color: #0b1c30; transform: translateY(-1px); }
+    .theme-toggle {
+      width: 34px; height: 34px; border-radius: 50%;
+      border: 1px solid var(--border); background: transparent;
+      color: var(--text-muted); cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      transition: var(--transition);
+    }
+    .theme-toggle:hover { color: var(--teal); border-color: var(--border-glow); }
+    .hamburger {
+      display: none; width: 36px; height: 36px;
+      border-radius: 8px; border: 1px solid var(--border);
+      background: transparent; color: var(--text);
+      cursor: pointer; align-items: center; justify-content: center;
+    }
+    .mobile-menu {
+      display: none; position: fixed;
+      top: var(--header-h); left: 0; right: 0;
+      background: rgba(2,8,23,0.97);
+      backdrop-filter: blur(20px);
+      border-bottom: 1px solid var(--border);
+      z-index: 190; flex-direction: column;
+    }
+    .mobile-menu.open { display: flex; }
+    .mobile-menu a {
+      padding: 14px 28px; color: var(--text-muted);
+      text-decoration: none; font-size: 15px; font-weight: 500;
+      border-bottom: 1px solid rgba(255,255,255,0.04);
+      transition: color 0.2s;
+    }
+    .mobile-menu a:hover { color: var(--teal); }
+
+    /* ============================================================
+       HERO HEADER
+    ============================================================ */
+    .page-hero {
+      padding: calc(var(--header-h) + 72px) 0 56px;
+      position: relative; z-index: 2; text-align: center;
+    }
+    .page-hero-badge {
+      display: inline-flex; align-items: center; gap: 8px;
+      padding: 5px 16px; border-radius: 999px;
+      background: var(--teal-dim); border: 1px solid rgba(45,212,191,0.2);
+      margin-bottom: 22px;
+      animation: fadeDown 0.7s ease both;
+    }
+    .page-hero-badge span { font-size: 11px; font-weight: 700; color: var(--teal); text-transform: uppercase; letter-spacing: 0.1em; }
+    .page-title {
+      font-family: var(--font-head);
+      font-size: clamp(40px, 6vw, 72px);
+      font-weight: 800; letter-spacing: 0;
+      line-height: 1.0; margin-bottom: 18px;
+      animation: fadeDown 0.8s ease 0.1s both;
+    }
+    .page-title .grad {
+      background: linear-gradient(135deg, var(--teal) 0%, #38bdf8 50%, #6366f1 100%);
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    .page-sub {
+      font-size: 17px; color: var(--text-muted); font-weight: 300;
+      max-width: 520px; margin: 0 auto 40px; line-height: 1.7;
+      animation: fadeDown 0.9s ease 0.2s both;
+    }
+
+    /* Stats row */
+    .stats-row {
+      display: flex; align-items: center; justify-content: center;
+      gap: 40px; flex-wrap: wrap;
+      animation: fadeDown 1s ease 0.3s both;
+    }
+    .stat-pill {
+      display: flex; align-items: center; gap: 10px;
+      padding: 8px 20px; border-radius: 999px;
+      background: var(--bg-glass);
+      backdrop-filter: blur(12px);
+      border: 1px solid var(--border);
+    }
+    .stat-pill-icon { font-size: 18px; color: var(--teal); }
+    .stat-pill-text { font-size: 13px; font-weight: 600; }
+    .stat-pill-text strong { color: var(--teal); }
+
+    /* ============================================================
+       FILTER BAR
+    ============================================================ */
+    .filter-section {
+      position: sticky; top: var(--header-h);
+      z-index: 100;
+      background: rgba(2,8,23,0.7);
+      backdrop-filter: blur(20px);
+      border-bottom: 1px solid var(--border);
+      padding: 0;
+    }
+    [data-theme="light"] .filter-section { background: rgba(240,244,255,0.85); }
+    .filter-inner {
+      max-width: 1280px; margin: 0 auto;
+      padding: 14px 32px;
+      display: flex; align-items: center; gap: 12px;
+      flex-wrap: wrap;
+    }
+    .filter-label {
+      font-size: 11px; font-weight: 700;
+      text-transform: uppercase; letter-spacing: 0.1em;
+      color: var(--text-subtle); flex-shrink: 0;
+      margin-right: 4px;
+    }
+    .filter-btns { display: flex; gap: 6px; flex-wrap: wrap; flex: 1; }
+    .filter-btn {
+      padding: 7px 18px; border-radius: 999px;
+      border: 1px solid var(--border);
+      background: transparent; color: var(--text-muted);
+      font-size: 12px; font-weight: 600;
+      cursor: pointer; transition: var(--transition);
+      font-family: var(--font-body);
+      display: flex; align-items: center; gap: 6px;
+    }
+    .filter-btn .count {
+      font-size: 10px;
+      background: rgba(255,255,255,0.07);
+      padding: 1px 6px; border-radius: 999px;
+      color: var(--text-subtle);
+    }
+    .filter-btn:hover { border-color: var(--border-glow); color: var(--teal); background: var(--teal-dim); }
+    .filter-btn.active {
+      background: var(--teal); border-color: var(--teal);
+      color: #0b1c30; font-weight: 700;
+    }
+    .filter-btn.active .count { background: rgba(0,0,0,0.15); color: #0b1c30; }
+
+    /* Sort / View controls */
+    .filter-controls { display: flex; gap: 8px; margin-left: auto; align-items: center; }
+    .sort-select {
+      padding: 7px 14px; border-radius: 8px;
+      border: 1px solid var(--border);
+      background: var(--bg-glass); color: var(--text-muted);
+      font-size: 12px; font-weight: 600; font-family: var(--font-body);
+      cursor: pointer; outline: none; transition: var(--transition);
+    }
+    .sort-select:focus { border-color: var(--border-glow); }
+    .view-btn {
+      width: 32px; height: 32px; border-radius: 7px;
+      border: 1px solid var(--border); background: transparent;
+      color: var(--text-subtle); cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      transition: var(--transition); font-size: 16px;
+    }
+    .view-btn.active, .view-btn:hover { border-color: var(--border-glow); color: var(--teal); background: var(--teal-dim); }
+
+    /* ============================================================
+       GRID / LIST LAYOUT
+    ============================================================ */
+    .templates-section {
+      position: relative; z-index: 2;
+      max-width: 1280px; margin: 0 auto;
+      padding: 48px 32px 80px;
+    }
+
+    .results-header {
+      display: flex; align-items: center; justify-content: space-between;
+      margin-bottom: 28px;
+    }
+    .results-count {
+      font-size: 13px; color: var(--text-muted); font-weight: 500;
+    }
+    .results-count strong { color: var(--text); }
+
+    /* Grid */
+    .templates-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 24px;
+      transition: var(--transition);
+    }
+    .templates-grid.list-view {
+      grid-template-columns: 1fr;
+      gap: 14px;
+    }
+    @media (max-width: 1100px) { .templates-grid { grid-template-columns: repeat(2, 1fr); } }
+    @media (max-width: 640px) { .templates-grid { grid-template-columns: 1fr; } }
+
+    /* ============================================================
+       TEMPLATE CARD
+    ============================================================ */
+    .tmpl-card {
+      border-radius: var(--radius-md);
+      overflow: hidden;
+      position: relative;
+      display: flex; flex-direction: column;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      backdrop-filter: blur(12px);
+      transition: var(--transition);
+      cursor: pointer;
+    }
+    .tmpl-card:hover {
+      border-color: var(--border-glow);
+      transform: translateY(-6px);
+      box-shadow: 0 24px 56px rgba(2,8,23,0.5), 0 0 0 1px rgba(45,212,191,0.08);
+    }
+    .tmpl-card.hidden { display: none; }
+
+    /* Thumbnail */
+    .tmpl-thumb {
+      position: relative; overflow: hidden;
+      aspect-ratio: 16/9;
+    }
+    .tmpl-thumb img {
+      width: 100%; height: 100%; object-fit: cover;
+      transition: transform 0.7s cubic-bezier(0.4,0,0.2,1);
+      filter: brightness(0.65) saturate(0.9);
+    }
+    .tmpl-card:hover .tmpl-thumb img {
+      transform: scale(1.07);
+      filter: brightness(0.8) saturate(1.1);
+    }
+    /* Gradient overlay */
+    .tmpl-thumb-overlay {
+      position: absolute; inset: 0;
+      background: linear-gradient(to top, rgba(2,8,23,0.95) 0%, rgba(2,8,23,0.2) 50%, transparent 100%);
+    }
+    /* Category badge on image */
+    .tmpl-cat-badge {
+      position: absolute; top: 12px; left: 12px;
+      padding: 4px 12px; border-radius: 999px;
+      font-size: 10px; font-weight: 700; letter-spacing: 0.08em;
+      text-transform: uppercase; backdrop-filter: blur(10px);
+      border: 1px solid rgba(255,255,255,0.12);
+    }
+    /* NEW badge */
+    .tmpl-new-badge {
+      position: absolute; top: 12px; right: 12px;
+      padding: 3px 10px; border-radius: 999px;
+      font-size: 9px; font-weight: 800; letter-spacing: 0.1em;
+      text-transform: uppercase;
+      background: linear-gradient(135deg, var(--teal), #38bdf8);
+      color: #0b1c30;
+    }
+    /* Popularity bar */
+    .tmpl-popularity {
+      position: absolute; bottom: 0; left: 0; right: 0;
+      height: 3px; background: rgba(255,255,255,0.05);
+    }
+    .tmpl-popularity-fill {
+      height: 100%; border-radius: 999px;
+      background: linear-gradient(90deg, var(--teal), #38bdf8);
+      transition: width 1s ease;
+    }
+
+    /* Preview hover overlay */
+    .tmpl-preview-overlay {
+      position: absolute; inset: 0;
+      display: flex; align-items: center; justify-content: center;
+      background: rgba(2,8,23,0.7);
+      backdrop-filter: blur(4px);
+      opacity: 0; transition: opacity 0.3s ease;
+      gap: 10px;
+    }
+    .tmpl-card:hover .tmpl-preview-overlay { opacity: 1; }
+    .overlay-btn {
+      display: flex; align-items: center; gap: 6px;
+      padding: 9px 18px; border-radius: 999px;
+      font-size: 12px; font-weight: 700;
+      cursor: pointer; transition: var(--transition);
+      border: none; text-decoration: none;
+    }
+    .overlay-btn-primary {
+      background: var(--teal); color: #0b1c30;
+    }
+    .overlay-btn-primary:hover { background: #3ff0da; box-shadow: 0 0 20px rgba(45,212,191,0.5); }
+    .overlay-btn-secondary {
+      background: rgba(255,255,255,0.1); color: var(--text);
+      border: 1px solid rgba(255,255,255,0.15);
+    }
+    .overlay-btn-secondary:hover { background: rgba(255,255,255,0.18); }
+
+    /* Card body */
+    .tmpl-body {
+      padding: 18px 20px 20px; flex: 1;
+      display: flex; flex-direction: column;
+    }
+    .tmpl-head {
+      display: flex; align-items: flex-start;
+      justify-content: space-between; margin-bottom: 8px;
+    }
+    .tmpl-name {
+      font-family: var(--font-head);
+      font-size: 17px; font-weight: 800; letter-spacing: 0;
+    }
+    .tmpl-rating {
+      display: flex; align-items: center; gap: 3px;
+      font-size: 11px; color: #fbbf24; font-weight: 700; flex-shrink: 0;
+    }
+    .tmpl-desc {
+      font-size: 13px; color: var(--text-muted);
+      line-height: 1.6; font-weight: 300; margin-bottom: 14px; flex: 1;
+    }
+    .tmpl-tags { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 16px; }
+    .tmpl-tag {
+      font-size: 10px; font-weight: 600; padding: 3px 9px;
+      border-radius: 999px; border: 1px solid var(--border);
+      background: rgba(255,255,255,0.03); color: var(--text-subtle);
+    }
+    .tmpl-footer {
+      display: flex; align-items: center; gap: 8px;
+    }
+    .tmpl-uses {
+      font-size: 11px; color: var(--text-subtle);
+      display: flex; align-items: center; gap: 4px;
+    }
+    .btn-use {
+      flex: 1; padding: 10px; border-radius: var(--radius-sm);
+      background: linear-gradient(135deg, var(--teal), #0ea5e9);
+      color: #0b1c30; font-weight: 700; font-size: 13px;
+      border: none; cursor: pointer; transition: var(--transition);
+      text-decoration: none; display: flex; align-items: center;
+      justify-content: center; gap: 6px;
+    }
+    .btn-use:hover { box-shadow: 0 0 20px rgba(45,212,191,0.4); transform: translateY(-1px); }
+    .btn-preview-sm {
+      width: 38px; height: 38px; border-radius: var(--radius-sm);
+      border: 1px solid var(--border); background: transparent;
+      color: var(--text-muted); cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      transition: var(--transition); font-size: 16px;
+    }
+    .btn-preview-sm:hover { border-color: var(--border-glow); color: var(--teal); background: var(--teal-dim); }
+
+    /* ============================================================
+       LIST VIEW CARD
+    ============================================================ */
+    .templates-grid.list-view .tmpl-card {
+      flex-direction: row; align-items: stretch;
+    }
+    .templates-grid.list-view .tmpl-thumb {
+      width: 240px; flex-shrink: 0;
+      aspect-ratio: auto; min-height: 140px;
+    }
+    .templates-grid.list-view .tmpl-body {
+      flex-direction: row; align-items: center; gap: 20px; flex-wrap: wrap;
+    }
+    .templates-grid.list-view .tmpl-head { flex-direction: column; flex: 1; }
+    .templates-grid.list-view .tmpl-tags { margin-bottom: 0; }
+    .templates-grid.list-view .tmpl-footer { margin-left: auto; flex-shrink: 0; }
+    .templates-grid.list-view .tmpl-card:hover { transform: translateX(4px) translateY(0); }
+
+    /* ============================================================
+       FEATURED TEMPLATE (larger card)
+    ============================================================ */
+    .tmpl-card.featured {
+      grid-column: span 2;
+    }
+    .tmpl-card.featured .tmpl-thumb { aspect-ratio: 21/9; }
+    @media (max-width: 1100px) { .tmpl-card.featured { grid-column: span 1; } }
+
+    /* ============================================================
+       EMPTY STATE
+    ============================================================ */
+    .empty-state {
+      grid-column: 1 / -1;
+      text-align: center; padding: 80px 32px;
+      color: var(--text-subtle);
+    }
+    .empty-state .material-symbols-outlined { font-size: 56px; margin-bottom: 12px; opacity: 0.3; }
+    .empty-state h3 { font-family: var(--font-head); font-size: 22px; font-weight: 700; margin-bottom: 8px; color: var(--text-muted); }
+    .empty-state p { font-size: 14px; font-weight: 300; }
+
+    /* ============================================================
+       PREVIEW MODAL
+    ============================================================ */
+    .modal-overlay {
+      display: none; position: fixed; inset: 0;
+      background: rgba(2,8,23,0.85);
+      backdrop-filter: blur(12px);
+      z-index: 1000;
+      align-items: center; justify-content: center; padding: 24px;
+    }
+    .modal-overlay.open { display: flex; animation: modalFadeIn 0.3s ease; }
+    @keyframes modalFadeIn {
+      from { opacity: 0; }
+      to   { opacity: 1; }
+    }
+    .modal-box {
+      background: #0d1a2e;
+      border: 1px solid var(--border-glow);
+      border-radius: var(--radius-lg);
+      width: 100%; max-width: 920px;
+      max-height: 90vh; overflow: hidden;
+      display: flex; flex-direction: column;
+      box-shadow: 0 40px 80px rgba(2,8,23,0.8), 0 0 0 1px rgba(45,212,191,0.06);
+      animation: modalSlideUp 0.35s cubic-bezier(0.4,0,0.2,1);
+    }
+    @keyframes modalSlideUp {
+      from { transform: translateY(30px); opacity: 0; }
+      to   { transform: translateY(0); opacity: 1; }
+    }
+    .modal-header {
+      padding: 18px 24px;
+      border-bottom: 1px solid var(--border);
+      display: flex; align-items: center; gap: 16px;
+    }
+    .modal-header h2 { font-family: var(--font-head); font-size: 20px; font-weight: 800; }
+    .modal-close {
+      margin-left: auto; width: 34px; height: 34px; border-radius: 8px;
+      border: 1px solid var(--border); background: transparent;
+      color: var(--text-muted); cursor: pointer; font-size: 18px;
+      display: flex; align-items: center; justify-content: center;
+      transition: var(--transition);
+    }
+    .modal-close:hover { color: var(--text); border-color: var(--border-glow); }
+    .modal-body { flex: 1; overflow: auto; }
+    .modal-body img {
+      width: 100%; display: block;
+      filter: brightness(0.9);
+    }
+    .modal-footer {
+      padding: 16px 24px;
+      border-top: 1px solid var(--border);
+      display: flex; align-items: center; gap: 12px;
+    }
+    .modal-footer p { font-size: 13px; color: var(--text-muted); flex: 1; }
+    .modal-use-btn {
+      display: flex; align-items: center; gap: 8px;
+      padding: 11px 26px; border-radius: 999px;
+      background: linear-gradient(135deg, var(--teal), #0ea5e9);
+      color: #0b1c30; font-weight: 700; font-size: 14px;
+      border: none; cursor: pointer; transition: var(--transition);
+      text-decoration: none;
+    }
+    .modal-use-btn:hover { box-shadow: 0 0 24px rgba(45,212,191,0.4); transform: translateY(-1px); }
+
+    /* ============================================================
+       CTA BANNER
+    ============================================================ */
+    .cta-banner {
+      position: relative; z-index: 2;
+      max-width: 1280px; margin: 0 auto 80px;
+      padding: 0 32px;
+    }
+    .cta-banner-inner {
+      border-radius: var(--radius-lg);
+      padding: 56px 48px;
+      display: flex; align-items: center; justify-content: space-between;
+      gap: 32px; flex-wrap: wrap;
+      background: var(--bg-glass);
+      backdrop-filter: blur(16px);
+      border: 1px solid var(--border);
+      position: relative; overflow: hidden;
+    }
+    .cta-banner-inner::before {
+      content: '';
+      position: absolute; top: -60px; right: -60px;
+      width: 300px; height: 300px; border-radius: 50%;
+      background: radial-gradient(circle, rgba(45,212,191,0.1), transparent 70%);
+      pointer-events: none;
+    }
+    .cta-banner-text h2 {
+      font-family: var(--font-head);
+      font-size: clamp(24px, 3vw, 36px); font-weight: 800;
+      letter-spacing: 0; margin-bottom: 8px;
+    }
+    .cta-banner-text p { font-size: 15px; color: var(--text-muted); font-weight: 300; }
+    .cta-banner-actions { display: flex; gap: 12px; flex-wrap: wrap; }
+    .btn-cta-primary {
+      display: flex; align-items: center; gap: 8px;
+      padding: 13px 28px; border-radius: 999px;
+      background: linear-gradient(135deg, var(--teal), #0ea5e9);
+      color: #0b1c30; font-weight: 700; font-size: 14px;
+      border: none; cursor: pointer; transition: var(--transition);
+      text-decoration: none;
+    }
+    .btn-cta-primary:hover { box-shadow: 0 0 28px rgba(45,212,191,0.4); transform: translateY(-2px); }
+    .btn-cta-secondary {
+      display: flex; align-items: center; gap: 8px;
+      padding: 13px 28px; border-radius: 999px;
+      border: 1px solid var(--border);
+      background: transparent; color: var(--text-muted);
+      font-weight: 600; font-size: 14px;
+      cursor: pointer; transition: var(--transition);
+      text-decoration: none;
+    }
+    .btn-cta-secondary:hover { border-color: var(--border-glow); color: var(--text); }
+
+    /* ============================================================
+       FOOTER
+    ============================================================ */
+    footer {
+      position: relative; z-index: 2;
+      border-top: 1px solid var(--border);
+      padding: 32px 0;
+      background: rgba(2,8,23,0.8);
+    }
+    .footer-inner {
+      max-width: 1280px; margin: 0 auto; padding: 0 32px;
+      display: flex; align-items: center; justify-content: space-between;
+      flex-wrap: wrap; gap: 16px;
+    }
+    .footer-logo { display: flex; align-items: center; gap: 8px; text-decoration: none; color: var(--text); }
+    .footer-logo-text { font-family: var(--font-head); font-size: 15px; font-weight: 800; }
+    .footer-copy { font-size: 12px; color: var(--text-muted); margin-top: 3px; }
+    .footer-links { display: flex; gap: 20px; }
+    .footer-links a { font-size: 12px; color: var(--text-subtle); text-decoration: none; text-transform: uppercase; letter-spacing: 0.05em; font-weight: 600; transition: color 0.2s; }
+    .footer-links a:hover { color: var(--teal); }
+
+    /* ============================================================
+       SCROLL REVEAL
+    ============================================================ */
+    .reveal {
+      opacity: 0; transform: translateY(28px);
+      transition: opacity 0.6s cubic-bezier(0.4,0,0.2,1), transform 0.6s cubic-bezier(0.4,0,0.2,1);
+    }
+    .reveal.visible { opacity: 1; transform: translateY(0); }
+    .d1 { transition-delay: 0.05s; } .d2 { transition-delay: 0.1s; }
+    .d3 { transition-delay: 0.15s; } .d4 { transition-delay: 0.2s; }
+    .d5 { transition-delay: 0.25s; } .d6 { transition-delay: 0.3s; }
+
+    /* ============================================================
+       KEYFRAMES
+    ============================================================ */
+    @keyframes fadeDown {
+      from { opacity: 0; transform: translateY(-16px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    /* ============================================================
+       CUSTOM CURSOR
+    ============================================================ */
+    #cursor-dot {
+      position: fixed; pointer-events: none; z-index: 9999;
+      width: 8px; height: 8px; border-radius: 50%;
+      background: var(--teal);
+      transform: translate(-50%,-50%);
+      transition: width 0.2s, height 0.2s, opacity 0.2s;
+      opacity: 0;
+    }
+    #cursor-ring {
+      position: fixed; pointer-events: none; z-index: 9998;
+      width: 32px; height: 32px; border-radius: 50%;
+      border: 1.5px solid rgba(45,212,191,0.4);
+      transform: translate(-50%,-50%);
+      transition: all 0.12s ease;
+    }
+    body:hover #cursor-dot { opacity: 1; }
+
+    @media (pointer: coarse) {
+      #cursor-dot,
+      #cursor-ring { display: none; }
+    }
+
+    @media (max-width: 991px) {
+      .navbar-main { justify-content: space-between; gap: 12px; }
+      .nav-divider,
+      .nav-page-title,
+      .nav-links,
+      .theme-toggle,
+      .nav-btn-cta { display: none; }
+      .nav-actions { margin-left: auto; }
+      .hamburger { display: flex; }
+      .filter-controls { display: none; }
+      .filter-inner { padding: 10px 20px; }
+      .templates-section { padding: 32px 20px 60px; }
+      .cta-banner { padding: 0 20px; }
+      .cta-banner-inner { padding: 36px 28px; }
+    }
+    @media (max-width: 767px) {
+      .navbar-main { padding: 0 20px; }
+      .templates-grid.list-view .tmpl-card { flex-direction: column; }
+      .templates-grid.list-view .tmpl-thumb { width: 100%; min-height: auto; }
+    }
+    @media (max-width: 420px) {
+      .navbar-main { padding: 0 18px; }
+      .nav-logo-text {
+        max-width: calc(100vw - 128px);
+        overflow: visible;
+        text-overflow: clip;
+        white-space: nowrap;
+        font-size: 15px;
+      }
+    }
+
+    [data-theme="light"] {
+      --bg: #f7fafc;
+      --bg-card: rgba(255,255,255,0.92);
+      --bg-glass: rgba(255,255,255,0.8);
+      --border: rgba(15,23,42,0.12);
+      --border-glow: rgba(15,118,110,0.28);
+      --teal: #0f766e;
+      --teal-dim: rgba(15,118,110,0.11);
+      --teal-mid: rgba(15,118,110,0.2);
+      --text: #0f172a;
+      --text-muted: #475569;
+      --text-subtle: #64748b;
+    }
+    [data-theme="light"] body {
+      background:
+        radial-gradient(circle at 15% -10%, rgba(15,118,110,0.1), transparent 30%),
+        radial-gradient(circle at 90% 0%, rgba(37,99,235,0.08), transparent 28%),
+        var(--bg);
+    }
+    [data-theme="light"] .navbar-main {
+      background: rgba(255,255,255,0.86);
+      border-bottom-color: rgba(15,23,42,0.1);
+      box-shadow: 0 8px 28px rgba(15,23,42,0.08);
+    }
+    [data-theme="light"] .navbar-main.scrolled,
+    [data-theme="light"] .filter-section,
+    [data-theme="light"] .mobile-menu {
+      background: rgba(255,255,255,0.96);
+    }
+    [data-theme="light"] .nav-links a:hover,
+    [data-theme="light"] .nav-links a.active {
+      background: rgba(15,118,110,0.09);
+    }
+    [data-theme="light"] .theme-toggle,
+    [data-theme="light"] .hamburger,
+    [data-theme="light"] .nav-btn,
+    [data-theme="light"] .filter-btn,
+    [data-theme="light"] .view-btn,
+    [data-theme="light"] .sort-select,
+    [data-theme="light"] .btn-preview-sm {
+      background: rgba(255,255,255,0.76);
+      border-color: rgba(15,23,42,0.12);
+    }
+    [data-theme="light"] .nav-btn-cta,
+    [data-theme="light"] .filter-btn.active,
+    [data-theme="light"] .overlay-btn-primary,
+    [data-theme="light"] .btn-use,
+    [data-theme="light"] .modal-use-btn,
+    [data-theme="light"] .btn-cta-primary {
+      color: #ffffff;
+    }
+    [data-theme="light"] .filter-btn.active .count {
+      background: rgba(255,255,255,0.24);
+      color: #ffffff;
+    }
+    [data-theme="light"] .filter-btn .count,
+    [data-theme="light"] .tmpl-tag {
+      background: rgba(15,23,42,0.05);
+    }
+    [data-theme="light"] .tmpl-card:hover {
+      box-shadow: 0 24px 56px rgba(15,23,42,0.13), 0 0 0 1px rgba(15,118,110,0.08);
+    }
+    [data-theme="light"] .tmpl-thumb-overlay {
+      background: linear-gradient(to top, rgba(15,23,42,0.72) 0%, rgba(15,23,42,0.12) 50%, transparent 100%);
+    }
+    [data-theme="light"] .modal-overlay {
+      background: rgba(15,23,42,0.42);
+    }
+    [data-theme="light"] .modal-box,
+    [data-theme="light"] .cta-banner-inner,
+    [data-theme="light"] footer {
+      background: rgba(255,255,255,0.9);
+      box-shadow: 0 30px 70px rgba(15,23,42,0.14);
+    }
+    [data-theme="light"] .nav-btn-cta,
+    [data-theme="light"] .filter-btn.active,
+    [data-theme="light"] .overlay-btn-primary,
+    [data-theme="light"] .btn-use,
+    [data-theme="light"] .modal-use-btn,
+    [data-theme="light"] .btn-cta-primary {
+      background: linear-gradient(135deg, #0f766e, #0369a1);
+      border-color: transparent;
+      color: #ffffff;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- CURSOR: these two divs are moved by JavaScript to create the custom pointer effect. -->
+  <div id="cursor-dot"></div>
+  <div id="cursor-ring"></div>
+
+  <!-- BACKGROUND: JavaScript draws WebGL shader animation and particles into these canvases. -->
+  <canvas id="shader-canvas"></canvas>
+  <canvas id="particles-canvas"></canvas>
+  <div class="blob blob-1"></div>
+  <div class="blob blob-2"></div>
+
+  <!-- ================================================================
+       NAVBAR
+  ================================================================ -->
+  <nav class="navbar-main" id="navbar">
+    <a class="nav-logo" href="index.html">
+      <div class="nav-logo-icon">
+        <span class="material-symbols-outlined" style="font-size:16px;color:#0b1c30;">hub</span>
+      </div>
+      <span class="nav-logo-text">SmartPortfolio</span>
+    </a>
+    <div class="nav-divider"></div>
+    <span class="nav-page-title">Template Gallery</span>
+
+    <ul class="nav-links">
+      <li><a href="index.html">Home</a></li>
+      <li><a href="templates.html" class="active">Templates</a></li>
+      <li><a href="builder.html">Builder</a></li>
+      <li><a href="preview.html">Preview</a></li>
+      <li><a href="contact.html">Contact</a></li>
+    </ul>
+
+    <div class="nav-actions">
+      <button class="theme-toggle" id="themeToggle">
+        <span class="material-symbols-outlined" style="font-size:16px;" id="themeIcon">dark_mode</span>
+      </button>
+      <a href="builder.html" class="nav-btn nav-btn-cta">
+        <span class="material-symbols-outlined" style="font-size:13px;">rocket_launch</span>
+        Start Building
+      </a>
+      <button class="hamburger" id="hamburger">
+        <span class="material-symbols-outlined" style="font-size:20px;">menu</span>
+      </button>
+    </div>
+  </nav>
+
+  <!-- Mobile Menu -->
+  <div class="mobile-menu" id="mobileMenu">
+    <a href="index.html">Home</a>
+    <a href="templates.html">Templates</a>
+    <a href="builder.html">Builder</a>
+    <a href="preview.html">Preview</a>
+    <a href="contact.html">Contact</a>
+  </div>
+
+  <!-- ================================================================
+       HERO HEADER
+  ================================================================ -->
+  <section class="page-hero">
+    <div class="page-hero-badge">
+      <span class="material-symbols-outlined" style="font-size:13px;color:var(--teal);">auto_awesome</span>
+      <span>6 Premium Templates</span>
+    </div>
+    <h1 class="page-title">
+      Pick Your<br /><span class="grad">Perfect Design</span>
+    </h1>
+    <p class="page-sub">
+      Every template is handcrafted, fully responsive, and built for professionals
+      who want to stand out. One click to customize everything.
+    </p>
+    <div class="stats-row">
+      <div class="stat-pill">
+        <span class="material-symbols-outlined stat-pill-icon">grid_view</span>
+        <span class="stat-pill-text"><strong>6</strong> Templates</span>
+      </div>
+      <div class="stat-pill">
+        <span class="material-symbols-outlined stat-pill-icon">devices</span>
+        <span class="stat-pill-text"><strong>100%</strong> Responsive</span>
+      </div>
+      <div class="stat-pill">
+        <span class="material-symbols-outlined stat-pill-icon">palette</span>
+        <span class="stat-pill-text"><strong>6</strong> Color Themes</span>
+      </div>
+      <div class="stat-pill">
+        <span class="material-symbols-outlined stat-pill-icon">bolt</span>
+        <span class="stat-pill-text"><strong>1-click</strong> Deploy</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================================================================
+       STICKY FILTER BAR
+  ================================================================ -->
+  <!-- Sticky filter bar. Buttons use data-filter values that JavaScript reads. -->
+  <div class="filter-section" id="filterSection">
+    <div class="filter-inner">
+      <span class="filter-label">Filter:</span>
+      <div class="filter-btns">
+        <button class="filter-btn active" data-filter="all">
+          All <span class="count" id="cnt-all">6</span>
+        </button>
+        <button class="filter-btn" data-filter="developer">
+          <span class="material-symbols-outlined" style="font-size:14px;">terminal</span>
+          Developer <span class="count" id="cnt-developer">2</span>
+        </button>
+        <button class="filter-btn" data-filter="designer">
+          <span class="material-symbols-outlined" style="font-size:14px;">palette</span>
+          Designer <span class="count" id="cnt-designer">2</span>
+        </button>
+        <button class="filter-btn" data-filter="executive">
+          <span class="material-symbols-outlined" style="font-size:14px;">business_center</span>
+          Executive <span class="count" id="cnt-executive">1</span>
+        </button>
+        <button class="filter-btn" data-filter="artist">
+          <span class="material-symbols-outlined" style="font-size:14px;">brush</span>
+          Artist <span class="count" id="cnt-artist">1</span>
+        </button>
+      </div>
+      <div class="filter-controls">
+        <select class="sort-select" id="sortSelect">
+          <option value="popular">Most Popular</option>
+          <option value="newest">Newest</option>
+          <option value="rating">Top Rated</option>
+        </select>
+        <button class="view-btn active" id="viewGrid" title="Grid view">
+          <span class="material-symbols-outlined" style="font-size:15px;">grid_view</span>
+        </button>
+        <button class="view-btn" id="viewList" title="List view">
+          <span class="material-symbols-outlined" style="font-size:15px;">view_list</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================================================================
+       TEMPLATES GRID
+  ================================================================ -->
+  <section class="templates-section">
+    <div class="results-header">
+      <div class="results-count"><strong id="visibleCount">6</strong> templates found</div>
+    </div>
+
+    <!-- templatesGrid is reordered by JavaScript when the user sorts or changes view mode. -->
+    <div class="templates-grid" id="templatesGrid">
+
+      <!-- ── Card 1: Minimalist Pro (FEATURED) ── -->
+      <!--
+        Template card data attributes are used by filtering, sorting, and the preview modal.
+        data-category filters the card, data-rating/data-uses/data-date sort it,
+        and data-name/data-desc/data-img fill the modal.
+      -->
+      <div class="tmpl-card featured reveal d1"
+           data-category="developer" data-rating="4.9" data-uses="3241" data-date="2024-01-15"
+           data-featured="true"
+           data-name="Minimalist Pro"
+           data-desc="A clean, precision-engineered layout for technical professionals who communicate through clarity and structure."
+           data-img="https://images.unsplash.com/photo-1467232004584-a241de8bcf5d?w=1200&q=80">
+        <div class="tmpl-thumb">
+          <img src="https://images.unsplash.com/photo-1467232004584-a241de8bcf5d?w=1200&q=80" alt="Minimalist Pro" loading="lazy" />
+          <div class="tmpl-thumb-overlay"></div>
+          <div class="tmpl-cat-badge" style="background:rgba(45,212,191,0.15);border-color:rgba(45,212,191,0.3);color:#2DD4BF;">Developer</div>
+          <div class="tmpl-new-badge">Popular</div>
+          <div class="tmpl-popularity"><div class="tmpl-popularity-fill" style="width:94%"></div></div>
+          <div class="tmpl-preview-overlay">
+            <button class="overlay-btn overlay-btn-secondary" onclick="openModal(this.closest('.tmpl-card'))">
+              <span class="material-symbols-outlined" style="font-size:14px;">visibility</span>
+              Preview
+            </button>
+            <a href="builder.html" class="overlay-btn overlay-btn-primary">
+              <span class="material-symbols-outlined" style="font-size:14px;">edit</span>
+              Use This
+            </a>
+          </div>
+        </div>
+        <div class="tmpl-body">
+          <div class="tmpl-head">
+            <div class="tmpl-name">Minimalist Pro</div>
+            <div class="tmpl-rating">★ 4.9</div>
+          </div>
+          <div class="tmpl-desc">Clean lines and structured layouts for technical professionals who value clarity over decoration. Perfect for engineers and architects.</div>
+          <div class="tmpl-tags">
+            <span class="tmpl-tag">Dark Theme</span>
+            <span class="tmpl-tag">GitHub Ready</span>
+            <span class="tmpl-tag">Fast Load</span>
+            <span class="tmpl-tag">Accessible</span>
+          </div>
+          <div class="tmpl-footer">
+            <span class="tmpl-uses">
+              <span class="material-symbols-outlined" style="font-size:13px;">person</span>
+              3.2k users
+            </span>
+            <button class="btn-preview-sm" onclick="openModal(this.closest('.tmpl-card'))">
+              <span class="material-symbols-outlined" style="font-size:16px;">open_in_full</span>
+            </button>
+            <a href="builder.html" class="btn-use">
+              <span class="material-symbols-outlined" style="font-size:14px;">bolt</span>
+              Use Template
+            </a>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── Card 2: Creative Edge ── -->
+      <div class="tmpl-card reveal d2"
+           data-category="designer" data-rating="4.8" data-uses="2108" data-date="2024-02-20"
+           data-name="Creative Edge"
+           data-desc="Bold asymmetric typography and dynamic grids for visual designers who treat every pixel as intentional."
+           data-img="https://images.unsplash.com/photo-1558655146-9f40138edfeb?w=900&q=80">
+        <div class="tmpl-thumb">
+          <img src="https://images.unsplash.com/photo-1558655146-9f40138edfeb?w=900&q=80" alt="Creative Edge" loading="lazy" />
+          <div class="tmpl-thumb-overlay"></div>
+          <div class="tmpl-cat-badge" style="background:rgba(244,63,94,0.15);border-color:rgba(244,63,94,0.3);color:#fb7185;">Designer</div>
+          <div class="tmpl-popularity"><div class="tmpl-popularity-fill" style="width:82%"></div></div>
+          <div class="tmpl-preview-overlay">
+            <button class="overlay-btn overlay-btn-secondary" onclick="openModal(this.closest('.tmpl-card'))">
+              <span class="material-symbols-outlined" style="font-size:14px;">visibility</span>
+              Preview
+            </button>
+            <a href="builder.html" class="overlay-btn overlay-btn-primary">
+              <span class="material-symbols-outlined" style="font-size:14px;">edit</span>
+              Use This
+            </a>
+          </div>
+        </div>
+        <div class="tmpl-body">
+          <div class="tmpl-head">
+            <div class="tmpl-name">Creative Edge</div>
+            <div class="tmpl-rating">★ 4.8</div>
+          </div>
+          <div class="tmpl-desc">Bold typography and dynamic grids for designers pushing visual boundaries. Asymmetric layouts that make recruiters stop scrolling.</div>
+          <div class="tmpl-tags">
+            <span class="tmpl-tag">Bold Type</span>
+            <span class="tmpl-tag">Gallery</span>
+            <span class="tmpl-tag">Animated</span>
+          </div>
+          <div class="tmpl-footer">
+            <span class="tmpl-uses">
+              <span class="material-symbols-outlined" style="font-size:13px;">person</span>
+              2.1k users
+            </span>
+            <button class="btn-preview-sm" onclick="openModal(this.closest('.tmpl-card'))">
+              <span class="material-symbols-outlined" style="font-size:16px;">open_in_full</span>
+            </button>
+            <a href="builder.html" class="btn-use">
+              <span class="material-symbols-outlined" style="font-size:14px;">bolt</span>
+              Use Template
+            </a>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── Card 3: Modern Arch ── -->
+      <div class="tmpl-card reveal d3"
+           data-category="executive" data-rating="4.7" data-uses="1876" data-date="2024-01-08"
+           data-name="Modern Arch"
+           data-desc="Sophisticated and authoritative. Serif headings, structured data panels, and executive presence built into every section."
+           data-img="https://images.unsplash.com/photo-1497366216548-37526070297c?w=900&q=80">
+        <div class="tmpl-thumb">
+          <img src="https://images.unsplash.com/photo-1497366216548-37526070297c?w=900&q=80" alt="Modern Arch" loading="lazy" />
+          <div class="tmpl-thumb-overlay"></div>
+          <div class="tmpl-cat-badge" style="background:rgba(245,158,11,0.15);border-color:rgba(245,158,11,0.3);color:#fbbf24;">Executive</div>
+          <div class="tmpl-popularity"><div class="tmpl-popularity-fill" style="width:74%"></div></div>
+          <div class="tmpl-preview-overlay">
+            <button class="overlay-btn overlay-btn-secondary" onclick="openModal(this.closest('.tmpl-card'))">
+              <span class="material-symbols-outlined" style="font-size:14px;">visibility</span>
+              Preview
+            </button>
+            <a href="builder.html" class="overlay-btn overlay-btn-primary">
+              <span class="material-symbols-outlined" style="font-size:14px;">edit</span>
+              Use This
+            </a>
+          </div>
+        </div>
+        <div class="tmpl-body">
+          <div class="tmpl-head">
+            <div class="tmpl-name">Modern Arch</div>
+            <div class="tmpl-rating">★ 4.7</div>
+          </div>
+          <div class="tmpl-desc">Sophisticated layout for C-suite leaders and high-level strategists. Authoritative presence with refined typographic hierarchy.</div>
+          <div class="tmpl-tags">
+            <span class="tmpl-tag">Executive</span>
+            <span class="tmpl-tag">Serif Type</span>
+            <span class="tmpl-tag">Data-Rich</span>
+          </div>
+          <div class="tmpl-footer">
+            <span class="tmpl-uses">
+              <span class="material-symbols-outlined" style="font-size:13px;">person</span>
+              1.9k users
+            </span>
+            <button class="btn-preview-sm" onclick="openModal(this.closest('.tmpl-card'))">
+              <span class="material-symbols-outlined" style="font-size:16px;">open_in_full</span>
+            </button>
+            <a href="builder.html" class="btn-use">
+              <span class="material-symbols-outlined" style="font-size:14px;">bolt</span>
+              Use Template
+            </a>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── Card 4: Studio Matrix ── -->
+      <div class="tmpl-card reveal d4"
+           data-category="developer" data-rating="4.9" data-uses="2654" data-date="2024-03-01"
+           data-name="Studio Matrix"
+           data-desc="Information-dense bento-grid layout built for developers who ship complex ecosystems and want every metric visible."
+           data-img="https://images.unsplash.com/photo-1555066931-4365d14bab8c?w=900&q=80">
+        <div class="tmpl-thumb">
+          <img src="https://images.unsplash.com/photo-1555066931-4365d14bab8c?w=900&q=80" alt="Studio Matrix" loading="lazy" />
+          <div class="tmpl-thumb-overlay"></div>
+          <div class="tmpl-cat-badge" style="background:rgba(45,212,191,0.15);border-color:rgba(45,212,191,0.3);color:#2DD4BF;">Developer</div>
+          <div class="tmpl-new-badge">New</div>
+          <div class="tmpl-popularity"><div class="tmpl-popularity-fill" style="width:88%"></div></div>
+          <div class="tmpl-preview-overlay">
+            <button class="overlay-btn overlay-btn-secondary" onclick="openModal(this.closest('.tmpl-card'))">
+              <span class="material-symbols-outlined" style="font-size:14px;">visibility</span>
+              Preview
+            </button>
+            <a href="builder.html" class="overlay-btn overlay-btn-primary">
+              <span class="material-symbols-outlined" style="font-size:14px;">edit</span>
+              Use This
+            </a>
+          </div>
+        </div>
+        <div class="tmpl-body">
+          <div class="tmpl-head">
+            <div class="tmpl-name">Studio Matrix</div>
+            <div class="tmpl-rating">★ 4.9</div>
+          </div>
+          <div class="tmpl-desc">Bento-grid layout with live GitHub stats and project ecosystem view. Built for fullstack engineers who love data density.</div>
+          <div class="tmpl-tags">
+            <span class="tmpl-tag">Bento Grid</span>
+            <span class="tmpl-tag">GitHub Stats</span>
+            <span class="tmpl-tag">Dark Mode</span>
+          </div>
+          <div class="tmpl-footer">
+            <span class="tmpl-uses">
+              <span class="material-symbols-outlined" style="font-size:13px;">person</span>
+              2.7k users
+            </span>
+            <button class="btn-preview-sm" onclick="openModal(this.closest('.tmpl-card'))">
+              <span class="material-symbols-outlined" style="font-size:16px;">open_in_full</span>
+            </button>
+            <a href="builder.html" class="btn-use">
+              <span class="material-symbols-outlined" style="font-size:14px;">bolt</span>
+              Use Template
+            </a>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── Card 5: Velvet Frame ── -->
+      <div class="tmpl-card reveal d5"
+           data-category="artist" data-rating="4.8" data-uses="1432" data-date="2024-02-10"
+           data-name="Velvet Frame"
+           data-desc="Cinematic gallery-first layout with immersive full-bleed images and elegant text overlays. Built for visual storytellers."
+           data-img="https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=900&q=80">
+        <div class="tmpl-thumb">
+          <img src="https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=900&q=80" alt="Velvet Frame" loading="lazy" />
+          <div class="tmpl-thumb-overlay"></div>
+          <div class="tmpl-cat-badge" style="background:rgba(139,92,246,0.15);border-color:rgba(139,92,246,0.3);color:#a78bfa;">Artist</div>
+          <div class="tmpl-popularity"><div class="tmpl-popularity-fill" style="width:68%"></div></div>
+          <div class="tmpl-preview-overlay">
+            <button class="overlay-btn overlay-btn-secondary" onclick="openModal(this.closest('.tmpl-card'))">
+              <span class="material-symbols-outlined" style="font-size:14px;">visibility</span>
+              Preview
+            </button>
+            <a href="builder.html" class="overlay-btn overlay-btn-primary">
+              <span class="material-symbols-outlined" style="font-size:14px;">edit</span>
+              Use This
+            </a>
+          </div>
+        </div>
+        <div class="tmpl-body">
+          <div class="tmpl-head">
+            <div class="tmpl-name">Velvet Frame</div>
+            <div class="tmpl-rating">★ 4.8</div>
+          </div>
+          <div class="tmpl-desc">Elegant gallery focus for visual storytellers, art directors, and photographers. Every image gets the cinematic treatment it deserves.</div>
+          <div class="tmpl-tags">
+            <span class="tmpl-tag">Gallery</span>
+            <span class="tmpl-tag">Cinematic</span>
+            <span class="tmpl-tag">Lightbox</span>
+          </div>
+          <div class="tmpl-footer">
+            <span class="tmpl-uses">
+              <span class="material-symbols-outlined" style="font-size:13px;">person</span>
+              1.4k users
+            </span>
+            <button class="btn-preview-sm" onclick="openModal(this.closest('.tmpl-card'))">
+              <span class="material-symbols-outlined" style="font-size:16px;">open_in_full</span>
+            </button>
+            <a href="builder.html" class="btn-use">
+              <span class="material-symbols-outlined" style="font-size:14px;">bolt</span>
+              Use Template
+            </a>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── Card 6: Elite Ledger ── -->
+      <div class="tmpl-card reveal d6"
+           data-category="designer" data-rating="4.6" data-uses="1120" data-date="2024-03-15"
+           data-name="Elite Ledger"
+           data-desc="Data-driven and results-oriented. Metrics, achievements, and career highlights presented with shimmer effects and progress bars."
+           data-img="https://images.unsplash.com/photo-1486312338219-ce68d2c6f44d?w=900&q=80">
+        <div class="tmpl-thumb">
+          <img src="https://images.unsplash.com/photo-1486312338219-ce68d2c6f44d?w=900&q=80" alt="Elite Ledger" loading="lazy" />
+          <div class="tmpl-thumb-overlay"></div>
+          <div class="tmpl-cat-badge" style="background:rgba(16,185,129,0.15);border-color:rgba(16,185,129,0.3);color:#34d399;">Designer</div>
+          <div class="tmpl-new-badge">New</div>
+          <div class="tmpl-popularity"><div class="tmpl-popularity-fill" style="width:58%"></div></div>
+          <div class="tmpl-preview-overlay">
+            <button class="overlay-btn overlay-btn-secondary" onclick="openModal(this.closest('.tmpl-card'))">
+              <span class="material-symbols-outlined" style="font-size:14px;">visibility</span>
+              Preview
+            </button>
+            <a href="builder.html" class="overlay-btn overlay-btn-primary">
+              <span class="material-symbols-outlined" style="font-size:14px;">edit</span>
+              Use This
+            </a>
+          </div>
+        </div>
+        <div class="tmpl-body">
+          <div class="tmpl-head">
+            <div class="tmpl-name">Elite Ledger</div>
+            <div class="tmpl-rating">★ 4.6</div>
+          </div>
+          <div class="tmpl-desc">Achievement-focused layout with shimmer progress bars and KPI metrics. Turn your resume into a results dashboard that speaks numbers.</div>
+          <div class="tmpl-tags">
+            <span class="tmpl-tag">Metrics</span>
+            <span class="tmpl-tag">Shimmer</span>
+            <span class="tmpl-tag">Light Theme</span>
+          </div>
+          <div class="tmpl-footer">
+            <span class="tmpl-uses">
+              <span class="material-symbols-outlined" style="font-size:13px;">person</span>
+              1.1k users
+            </span>
+            <button class="btn-preview-sm" onclick="openModal(this.closest('.tmpl-card'))">
+              <span class="material-symbols-outlined" style="font-size:16px;">open_in_full</span>
+            </button>
+            <a href="builder.html" class="btn-use">
+              <span class="material-symbols-outlined" style="font-size:14px;">bolt</span>
+              Use Template
+            </a>
+          </div>
+        </div>
+      </div>
+
+      <!-- Empty state (hidden by default) -->
+      <!-- Empty state appears when no template matches the active filter. -->
+      <div class="empty-state" id="emptyState" style="display:none;">
+        <div><span class="material-symbols-outlined">search_off</span></div>
+        <h3>No templates found</h3>
+        <p>Try a different filter or browse all templates.</p>
+      </div>
+
+    </div><!-- /grid -->
+  </section>
+
+  <!-- ================================================================
+       CTA BANNER
+  ================================================================ -->
+  <div class="cta-banner">
+    <div class="cta-banner-inner reveal">
+      <div class="cta-banner-text">
+        <h2>Can't decide? <span style="color:var(--teal);">Start with any.</span></h2>
+        <p>Every template is fully customizable in the builder — switch anytime, no work lost.</p>
+      </div>
+      <div class="cta-banner-actions">
+        <a href="builder.html" class="btn-cta-primary">
+          <span class="material-symbols-outlined" style="font-size:18px;">edit_note</span>
+          Open Builder
+        </a>
+        <a href="preview.html" class="btn-cta-secondary">
+          <span class="material-symbols-outlined" style="font-size:18px;">preview</span>
+          See Preview
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================================================================
+       FOOTER
+  ================================================================ -->
+  <footer>
+    <div class="footer-inner">
+      <div>
+        <div class="footer-logo">
+          <span class="material-symbols-outlined" style="color:var(--teal);font-size:18px;">hub</span>
+          <span class="footer-logo-text">SmartPortfolio</span>
+        </div>
+        <div class="footer-copy">© 2024 Smart Portfolio Builder. All rights reserved.</div>
+      </div>
+      <div class="footer-links">
+        <a href="#">Privacy</a>
+        <a href="#">Terms</a>
+        <a href="#">Security</a>
+        <a href="contact.html">Help</a>
+      </div>
+    </div>
+  </footer>
+
+  <!-- ================================================================
+       PREVIEW MODAL
+  ================================================================ -->
+  <!-- Preview modal. JavaScript fills this with the clicked template card data. -->
+  <div class="modal-overlay" id="modalOverlay">
+    <div class="modal-box">
+      <div class="modal-header">
+        <div>
+          <div style="font-size:11px;color:var(--teal);font-weight:700;text-transform:uppercase;letter-spacing:0.08em;margin-bottom:4px;" id="modalCat">Template Preview</div>
+          <h2 id="modalName">Template Name</h2>
+        </div>
+        <button class="modal-close" onclick="closeModal()">
+          <span class="material-symbols-outlined" style="font-size:18px;">close</span>
+        </button>
+      </div>
+      <div class="modal-body">
+        <img id="modalImg" src="" alt="Template Preview" />
+        <div style="padding:24px 28px;">
+          <p id="modalDesc" style="font-size:14px;color:var(--text-muted);line-height:1.7;font-weight:300;"></p>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <p id="modalMeta"></p>
+        <a href="builder.html" class="modal-use-btn">
+          <span class="material-symbols-outlined" style="font-size:16px;">bolt</span>
+          Use This Template
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <!-- Bootstrap JS is loaded for any Bootstrap interactive components. -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+  <script>
+  /* ================================================================
+     WEBGL SHADER BACKGROUND
+  ================================================================ */
+  (function() {
+    // IIFE: runs the WebGL setup immediately and keeps shader variables private.
+    const canvas = document.getElementById('shader-canvas');
+
+    // WebGL context used to draw the animated background on the GPU.
+    const gl = canvas.getContext('webgl');
+
+    // If WebGL is unavailable, skip only this effect.
+    if (!gl) return;
+
+    // Vertex shader: sends four rectangle points directly to the screen.
+    const vs = `attribute vec4 p;void main(){gl_Position=p;}`;
+
+    // Fragment shader: calculates each pixel color for the animated teal lines.
+    // R is resolution, T is elapsed time.
+    const fs = `
+      precision highp float;
+      uniform vec2 R; uniform float T;
+      float rnd(float t){return(cos(t)+cos(t*1.3+1.3)+cos(t*1.4+1.4))/3.;}
+      void main(){
+        vec2 uv=gl_FragCoord.xy/R;
+        vec2 sp=(gl_FragCoord.xy-R/2.)/R.x*10.;
+        float hf=1.-(cos(uv.x*6.28)*.5+.5);
+        float vf=1.-(cos(uv.y*6.28)*.5+.5);
+        sp.y+=rnd(sp.x*.5+T*.04)*hf;
+        sp.x+=rnd(sp.y*.5+T*.04+2.)*hf;
+        vec4 lines=vec4(0.);
+        vec4 lc=vec4(.18,.83,.75,1.);
+        for(int l=0;l<8;l++){
+          // GLSL for-loop: starts at 0, runs while l is under 8,
+          // and adds one animated line layer each pass.
+          float nl=float(l)/8.;
+          float rn=rnd(float(l)+sp.x*.5+T*.13)*.5+.5;
+          float hw=mix(.01,.15,rn*hf)/2.;
+          float off=rnd(float(l)+T*.2*(1.+nl))*mix(.6,2.,hf);
+          float lp=rnd(sp.x*.2+T*.2)*hf+off;
+          float line=smoothstep(hw,.0,abs(lp-sp.y))/2.;
+          lines+=line*lc*rn;
+        }
+        vec4 c=mix(vec4(.008,.031,.09,1.),vec4(.015,.045,.11,1.),uv.x);
+        c*=vf; c.a=1.; c+=lines;
+        gl_FragColor=c;
+      }`;
+    // Compiles a shader string into a WebGL shader object.
+    function mkShader(type, src) {
+      const s = gl.createShader(type); gl.shaderSource(s, src);
+      gl.compileShader(s); return s;
+    }
+    // Program links vertex and fragment shaders into one render pipeline.
+    const prog = gl.createProgram();
+    gl.attachShader(prog, mkShader(gl.VERTEX_SHADER, vs));
+    gl.attachShader(prog, mkShader(gl.FRAGMENT_SHADER, fs));
+    gl.linkProgram(prog);
+    // Buffer stores four points for a full-screen rectangle.
+    const buf = gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER, buf);
+    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1,-1,1,-1,-1,1,1,1]), gl.STATIC_DRAW);
+    // Locations let JavaScript pass position, resolution, and time into the shader.
+    const pLoc = gl.getAttribLocation(prog,'p');
+    const rLoc = gl.getUniformLocation(prog,'R');
+    const tLoc = gl.getUniformLocation(prog,'T');
+
+    // Keeps canvas pixels and WebGL viewport matched to the browser size.
+    function resize() { canvas.width=window.innerWidth; canvas.height=window.innerHeight; gl.viewport(0,0,canvas.width,canvas.height); }
+    window.addEventListener('resize', resize); resize();
+    // Start time used to calculate animated elapsed time.
+    const t0 = Date.now();
+
+    // render() draws a frame, then schedules itself again.
+    (function render() {
+      gl.clear(gl.COLOR_BUFFER_BIT); gl.useProgram(prog);
+      gl.uniform2f(rLoc,canvas.width,canvas.height);
+      gl.uniform1f(tLoc,(Date.now()-t0)/1000);
+      gl.bindBuffer(gl.ARRAY_BUFFER,buf);
+      gl.vertexAttribPointer(pLoc,2,gl.FLOAT,false,0,0);
+      gl.enableVertexAttribArray(pLoc);
+      gl.drawArrays(gl.TRIANGLE_STRIP,0,4);
+      requestAnimationFrame(render);
+    })();
+  })();
+
+  /* ================================================================
+     PARTICLES
+  ================================================================ */
+  (function() {
+    // Particle animation layer drawn with Canvas 2D.
+    const c = document.getElementById('particles-canvas');
+
+    // ctx provides 2D drawing methods like arc(), fill(), and clearRect().
+    const ctx = c.getContext('2d');
+
+    // pts stores all particle objects.
+    let pts = [];
+
+    // Keeps particle canvas the same size as the viewport.
+    function resize() { c.width=window.innerWidth; c.height=window.innerHeight; }
+    window.addEventListener('resize', resize); resize();
+
+    // for-loop creates 80 particles. Each object stores position, radius,
+    // horizontal/vertical speed, opacity, and opacity direction.
+    for (let i=0;i<80;i++) pts.push({
+      x:Math.random()*c.width, y:Math.random()*c.height,
+      r:Math.random()*1.4+0.3,
+      sx:(Math.random()-.5)*.4, sy:-(Math.random()*.4+.1),
+      op:Math.random(), od:Math.random()>.5?.006:-.006
+    });
+    // anim() is the particle animation loop.
+    (function anim() {
+      ctx.clearRect(0,0,c.width,c.height);
+
+      // forEach loop runs once for every particle object in pts.
+      pts.forEach(p=>{
+        p.x+=p.sx; p.y+=p.sy; p.op+=p.od;
+        // Reverse opacity direction at the limits to make particles twinkle.
+        if(p.op>=1){p.op=1;p.od=-.006;}
+        if(p.op<=0){p.op=0;p.od=.006;}
+
+        // When a particle exits the top, recycle it at the bottom.
+        if(p.y<-10){p.x=Math.random()*c.width;p.y=c.height+10;}
+        ctx.save(); ctx.globalAlpha=p.op*.45;
+        ctx.fillStyle='#2DD4BF'; ctx.shadowBlur=3; ctx.shadowColor='#2DD4BF';
+        ctx.beginPath(); ctx.arc(p.x,p.y,p.r,0,Math.PI*2); ctx.fill();
+        ctx.restore();
+      });
+      requestAnimationFrame(anim);
+    })();
+  })();
+
+  /* ================================================================
+     CUSTOM CURSOR
+  ================================================================ */
+  // dot is the small cursor center. ring is the larger delayed outline.
+  const dot  = document.getElementById('cursor-dot');
+  const ring = document.getElementById('cursor-ring');
+
+  // mx/my are the real mouse coordinates. rx/ry are the ring coordinates,
+  // eased toward the mouse for a trailing effect.
+  let mx=0,my=0,rx=0,ry=0;
+
+  // Mousemove updates the dot instantly.
+  document.addEventListener('mousemove', e => { mx=e.clientX; my=e.clientY; dot.style.left=mx+'px'; dot.style.top=my+'px'; });
+
+  // cursorAnim() moves the ring gradually toward the current mouse position.
+  (function cursorAnim() {
+    rx += (mx-rx)*.13; ry += (my-ry)*.13;
+    ring.style.left=rx+'px'; ring.style.top=ry+'px';
+    requestAnimationFrame(cursorAnim);
+  })();
+  // forEach attaches hover effects to every interactive element.
+  document.querySelectorAll('a,button,.tmpl-card,.filter-btn').forEach(el => {
+    el.addEventListener('mouseenter', () => {
+      dot.style.width='14px'; dot.style.height='14px';
+      ring.style.width='48px'; ring.style.height='48px';
+      ring.style.borderColor='rgba(45,212,191,0.7)';
+    });
+    el.addEventListener('mouseleave', () => {
+      dot.style.width='8px'; dot.style.height='8px';
+      ring.style.width='32px'; ring.style.height='32px';
+      ring.style.borderColor='rgba(45,212,191,0.4)';
+    });
+  });
+
+  /* ================================================================
+     NAVBAR SCROLL
+  ================================================================ */
+  window.addEventListener('scroll', () => {
+    document.getElementById('navbar').classList.toggle('scrolled', window.scrollY > 40);
+  });
+
+  /* ================================================================
+     HAMBURGER
+  ================================================================ */
+  document.getElementById('hamburger').addEventListener('click', () => {
+    document.getElementById('mobileMenu').classList.toggle('open');
+  });
+
+  /* ================================================================
+     THEME TOGGLE
+  ================================================================ */
+  document.getElementById('themeToggle').addEventListener('click', () => {
+    const html = document.documentElement;
+    const isDark = html.getAttribute('data-theme') === 'dark';
+    html.setAttribute('data-theme', isDark ? 'light' : 'dark');
+    document.getElementById('themeIcon').textContent = isDark ? 'light_mode' : 'dark_mode';
+  });
+
+  /* ================================================================
+     FILTER SYSTEM
+  ================================================================ */
+  // cards stores every real template card. data-category is required for filtering.
+  const cards = document.querySelectorAll('.tmpl-card[data-category]');
+
+  // emptyState is shown if a filter hides all cards.
+  const emptyState = document.getElementById('emptyState');
+
+  // currentFilter stores the active category. "all" means show every card.
+  let currentFilter = 'all';
+
+  // currentSort stores the selected sort mode.
+  let currentSort = 'popular';
+
+  // Adds click handlers to all filter buttons.
+  document.querySelectorAll('.filter-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      // Remove active state from every button, then activate the clicked one.
+      document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+
+      // data-filter from the button decides which cards are visible.
+      currentFilter = btn.getAttribute('data-filter');
+      applyFilter();
+    });
+  });
+
+  // Sort dropdown changes currentSort and then reapplies gallery ordering.
+  document.getElementById('sortSelect').addEventListener('change', function() {
+    currentSort = this.value;
+    applyFilter();
+  });
+
+  // applyFilter() sorts the card list, hides non-matching categories,
+  // restarts reveal animations, and updates the visible count.
+  function applyFilter() {
+    let visible = 0;
+
+    // Convert NodeList into an Array so Array.sort() can be used.
+    const cardArr = Array.from(cards);
+
+    // Sort comparator: compares two cards at a time and returns which comes first.
+    cardArr.sort((a,b) => {
+      if (currentSort === 'popular') return parseInt(b.dataset.uses) - parseInt(a.dataset.uses);
+      if (currentSort === 'rating')  return parseFloat(b.dataset.rating) - parseFloat(a.dataset.rating);
+      if (currentSort === 'newest')  return new Date(b.dataset.date) - new Date(a.dataset.date);
+      return 0;
+    });
+
+    const grid = document.getElementById('templatesGrid');
+
+    // forEach loop re-appends the existing cards in sorted order.
+    cardArr.forEach(c => grid.appendChild(c)); // re-order DOM
+
+    // Loops through sorted cards to show/hide them and stagger animations.
+    cardArr.forEach((card, i) => {
+      const cat = card.getAttribute('data-category');
+      const show = currentFilter === 'all' || cat === currentFilter;
+      card.classList.toggle('hidden', !show);
+      if (show) {
+        visible++;
+        card.style.animationDelay = (i * 0.06) + 's';
+        card.classList.remove('reveal');
+        void card.offsetWidth; // force reflow so the reveal animation can restart
+        card.classList.add('reveal');
+        // setTimeout adds visible after a short delay for a cascade effect.
+        setTimeout(() => card.classList.add('visible'), 60 + i * 60);
+      }
+    });
+
+    // Toggle empty state and update result count.
+    emptyState.style.display = visible === 0 ? 'block' : 'none';
+    document.getElementById('visibleCount').textContent = visible;
+  }
+
+  /* ================================================================
+     VIEW TOGGLE (grid / list)
+  ================================================================ */
+  document.getElementById('viewGrid').addEventListener('click', function() {
+    // Activate grid button and deactivate list button.
+    this.classList.add('active');
+    document.getElementById('viewList').classList.remove('active');
+
+    // Removing list-view returns the template container to grid layout.
+    document.getElementById('templatesGrid').classList.remove('list-view');
+    document.querySelectorAll('.tmpl-card[data-featured="true"]').forEach(c => c.classList.add('featured'));
+  });
+  document.getElementById('viewList').addEventListener('click', function() {
+    // Activate list button and deactivate grid button.
+    this.classList.add('active');
+    document.getElementById('viewGrid').classList.remove('active');
+
+    // list-view class changes CSS so cards become horizontal rows.
+    document.getElementById('templatesGrid').classList.add('list-view');
+    // Featured doesn't make sense in list view
+    document.querySelectorAll('.tmpl-card[data-featured="true"]').forEach(c => c.classList.remove('featured'));
+  });
+
+  /* ================================================================
+     PREVIEW MODAL
+  ================================================================ */
+  // openModal() reads data attributes from the clicked card and fills the modal.
+  function openModal(card) {
+    const name = card.dataset.name;
+    const desc = card.dataset.desc;
+    const img  = card.dataset.img;
+    const cat  = card.dataset.category;
+    const rating = card.dataset.rating;
+    const uses = parseInt(card.dataset.uses).toLocaleString();
+
+    // Update modal fields before showing the overlay.
+    document.getElementById('modalName').textContent = name;
+    document.getElementById('modalDesc').textContent = desc;
+    document.getElementById('modalImg').src = img;
+    document.getElementById('modalCat').textContent = cat.charAt(0).toUpperCase() + cat.slice(1) + ' Template';
+    document.getElementById('modalMeta').textContent = `★ ${rating} rating · ${uses} portfolios built with this template`;
+
+    // open class shows modal. overflow hidden prevents background scrolling.
+    document.getElementById('modalOverlay').classList.add('open');
+    document.body.style.overflow = 'hidden';
+  }
+
+  // closeModal() hides the modal and restores page scrolling.
+  function closeModal() {
+    document.getElementById('modalOverlay').classList.remove('open');
+    document.body.style.overflow = '';
+  }
+  // Clicking outside the modal box closes it.
+  document.getElementById('modalOverlay').addEventListener('click', function(e) {
+    if (e.target === this) closeModal();
+  });
+
+  // Escape key closes the modal for keyboard users.
+  document.addEventListener('keydown', e => { if (e.key === 'Escape') closeModal(); });
+
+  /* ================================================================
+     SCROLL REVEAL
+  ================================================================ */
+  // IntersectionObserver reveals elements when they enter the viewport.
+  const observer = new IntersectionObserver(entries => {
+    entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('visible'); });
+  }, { threshold: 0.1, rootMargin: '0px 0px -30px 0px' });
+  // Observe every element with the reveal class.
+  document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
+
+  /* ================================================================
+     ANIMATE POPULARITY BARS ON SCROLL
+  ================================================================ */
+  // Separate observer animates popularity bars when cards appear.
+  const barObserver = new IntersectionObserver(entries => {
+    entries.forEach(e => {
+      if (e.isIntersecting) {
+        const fill = e.target.querySelector('.tmpl-popularity-fill');
+        // Store current width, reset to 0, then restore to trigger CSS transition.
+        if (fill) { const w = fill.style.width; fill.style.width='0'; setTimeout(()=>fill.style.width=w, 100); }
+        barObserver.unobserve(e.target);
+      }
+    });
+  }, { threshold: 0.3 });
+  document.querySelectorAll('.tmpl-card').forEach(c => barObserver.observe(c));
+  </script>
+</body>
+</html>

@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<!--
+  contact.html is the contact page for NEXUS.
+  It contains the WebGL background canvas, shared navigation, a validated
+  contact form, sidebar contact cards, footer, and toast notification.
+-->
+<html class="dark" lang="en">
+<head>
+<!-- UTF-8 supports symbols, text, and icon characters correctly. -->
+<meta charset="utf-8"/>
+<!-- viewport keeps the layout responsive across mobile and desktop screens. -->
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Contact — NEXUS</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%232DD4BF'/%3E%3Ctext x='32' y='42' text-anchor='middle' font-family='Arial,sans-serif' font-size='28' font-weight='700' fill='%23020817'%3EN%3C/text%3E%3C/svg%3E"/>
+<!-- Loads the same NEXUS fonts used by the other pages: DM Sans for body text and Syne for headings. -->
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,300&display=swap" rel="stylesheet"/>
+<!-- Loads Material Symbols icons used in buttons, nav, and cards. -->
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+  <!-- Shared site CSS. -->
+  <link rel="stylesheet" href="css/main.css" />
+  <!-- Contact-page-specific CSS. -->
+  <link rel="stylesheet" href="css/contact.css" />
+</head>
+
+<body class="font-body-md text-on-surface min-h-screen flex flex-col contact-page">
+
+<!-- ════════════════════════════════════════════════════
+     WEBGL2 SHADER CANVAS  — full-page background
+     Vanilla port of the animated-shader-hero component.
+     Colors remapped to Stitch palette: navy / slate / teal
+════════════════════════════════════════════════════ -->
+<!-- aria-hidden tells screen readers to ignore this decorative animation canvas. -->
+<canvas id="hero-shader" aria-hidden="true"></canvas>
+
+<!-- ================================================================
+       NAVIGATION
+  ================================================================ -->
+  <!-- Shared site navigation. aria-label describes the nav for assistive technology. -->
+  <nav class="navbar-main" id="navbar" aria-label="Primary navigation">
+    <div class="nav-inner">
+      <a class="nav-logo" href="index.html" aria-label="NEXUS home">
+        <div class="nav-logo-icon">
+          <span class="material-symbols-outlined nav-logo-symbol">hub</span>
+        </div>
+        <span class="nav-logo-text">NEXUS</span>
+      </a>
+
+      <!-- Desktop nav links. active marks the current Contact page. -->
+      <ul class="nav-links">
+        <li><a href="index.html">Home</a></li>
+        <li><a href="templates.html">Templates</a></li>
+        <li><a href="builder.html">Builder</a></li>
+        <li><a href="preview.html">Preview</a></li>
+        <li><a href="contact.html" class="active">Contact</a></li>
+      </ul>
+
+      <!-- Theme toggle, launch button, and mobile hamburger menu. -->
+      <div class="nav-actions-home">
+        <button class="theme-toggle" id="themeToggle" type="button" title="Toggle theme" aria-label="Toggle theme">
+          <span class="material-symbols-outlined icon-18" id="themeIcon">dark_mode</span>
+        </button>
+        <a href="builder.html" class="nav-cta">Launch App</a>
+        <button class="hamburger" id="hamburger" type="button" aria-label="Open navigation" aria-expanded="false">
+          <span class="material-symbols-outlined icon-20">menu</span>
+        </button>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Mobile menu is opened/closed by shared main.js. -->
+  <div class="mobile-menu" id="mobileMenu">
+    <a href="index.html">Home</a>
+    <a href="templates.html">Templates</a>
+    <a href="builder.html">Builder</a>
+    <a href="preview.html">Preview</a>
+    <a href="contact.html" class="active">Contact</a>
+    <a href="builder.html" class="mobile-launch">Launch App</a>
+  </div>
+
+<!-- ════════════════════════════════════════════════════
+     MAIN CONTENT
+════════════════════════════════════════════════════ -->
+<!-- Main contact layout. Utility classes here are defined locally in contact.css. -->
+<main class="page-content flex-grow flex flex-col items-center
+             px-container-padding-mobile md:px-container-padding-desktop
+             contact-main pt-12 pb-16 md:pb-12 max-w-[900px] mx-auto w-full gap-10">
+
+  <!-- Heading section (Stitch design) -->
+  <!-- fade-up plays the entrance animation defined in contact.css. -->
+  <div class="text-center fade-up">
+    <h1 class="font-headline-xl text-headline-lg-mobile md:text-headline-xl text-on-background mb-3">
+      Get In Touch
+    </h1>
+    <p class="text-on-surface-variant font-body-md">
+      Have a project in mind? Let's build something exceptional together.
+    </p>
+  </div>
+
+  <!-- ════════════════════════════════════════════════
+       FORM + SIDEBAR GRID  (Stitch design)
+  ═════════════════════════════════════════════════ -->
+  <div class="w-full grid grid-cols-1 lg:grid-cols-5 gap-8 items-start">
+
+    <!-- FORM — 3 cols, Stitch glassmorphism card -->
+    <div class="lg:col-span-3 fade-up delay-1">
+      <section class="glass-card w-full rounded-xl p-8 relative overflow-hidden">
+
+        <!-- Stitch top accent line -->
+        <div class="absolute top-0 left-0 right-0 h-px
+                    bg-gradient-to-r from-transparent via-soft-teal/40 to-transparent"></div>
+
+        <h2 class="font-headline-md text-headline-md text-on-surface mb-1">Send a Message</h2>
+        <p class="text-on-surface-variant text-sm mb-6">Fields marked * are required.</p>
+
+        <!-- Success state -->
+        <!-- Hidden success state replaces the form after a successful submit. -->
+        <div id="success-state" class="hidden text-center py-10">
+          <span class="material-symbols-outlined text-soft-teal success-icon block mb-4 u-contact-1"
+               >check_circle</span>
+          <h3 class="font-headline-md text-on-surface mb-2">Message Sent!</h3>
+          <p class="text-on-surface-variant text-sm mb-6">We'll get back to you within 24 hours.</p>
+          <button id="resetFormBtn"
+            class="px-6 py-2 border border-white/10 rounded-lg text-on-surface-variant
+                   hover:text-primary transition-colors text-sm">
+            Send Another
+          </button>
+        </div>
+
+        <!-- Form -->
+        <!-- novalidate disables browser default validation so contact.js can show custom errors. -->
+        <form id="contact-form" novalidate class="flex flex-col gap-5">
+
+          <!-- Name -->
+          <div class="flex flex-col gap-2">
+            <label class="font-label-md text-label-md text-on-surface-variant" for="name">Full Name *</label>
+            <!-- id/name are used by labels, validation, and future email-service integration. -->
+            <input class="bg-black/20 border border-white/10 rounded-lg py-3 px-4 text-on-surface
+                          placeholder:text-on-surface-variant/30 input-focus transition-all duration-200"
+                   id="name" name="name" placeholder="John Doe" type="text"/>
+            <!-- Error spans start hidden and are toggled by contact.js. -->
+            <span class="hidden text-red-400 text-xs" id="name-err">Please enter your name.</span>
+          </div>
+
+          <!-- Email -->
+          <div class="flex flex-col gap-2">
+            <label class="font-label-md text-label-md text-on-surface-variant" for="email">Email Address *</label>
+            <input class="bg-black/20 border border-white/10 rounded-lg py-3 px-4 text-on-surface
+                          placeholder:text-on-surface-variant/30 input-focus transition-all duration-200"
+                   id="email" name="email" placeholder="john@example.com" type="email"/>
+            <span class="hidden text-red-400 text-xs" id="email-err">Please enter a valid email.</span>
+          </div>
+
+          <!-- Subject -->
+          <div class="flex flex-col gap-2">
+            <label class="font-label-md text-label-md text-on-surface-variant" for="subject">Subject *</label>
+            <div class="relative">
+              <select class="w-full bg-black/20 border border-white/10 rounded-lg py-3 px-4
+                             text-on-surface appearance-none cursor-pointer
+                             input-focus transition-all duration-200 text-sm"
+                      id="subject" name="subject">
+                <option value="" disabled selected class="bg-surface">Select a topic…</option>
+                <option value="project"     class="bg-surface">Project Inquiry</option>
+                <option value="feedback"    class="bg-surface">Feedback</option>
+                <option value="support"     class="bg-surface">Technical Support</option>
+                <option value="partnership" class="bg-surface">Partnership</option>
+                <option value="other"       class="bg-surface">Other</option>
+              </select>
+              <span class="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 text-on-surface-variant pointer-events-none u-contact-2"
+                   >expand_more</span>
+            </div>
+            <span class="hidden text-red-400 text-xs" id="subject-err">Please select a subject.</span>
+          </div>
+
+          <!-- Message -->
+          <div class="flex flex-col gap-2">
+            <label class="font-label-md text-label-md text-on-surface-variant" for="message">Message *</label>
+            <!-- maxlength limits message size; contact.js also updates the character counter. -->
+            <textarea class="bg-black/20 border border-white/10 rounded-lg py-3 px-4 text-on-surface
+                             placeholder:text-on-surface-variant/30 input-focus transition-all duration-200 resize-none"
+                      id="message" name="message"
+                      placeholder="Tell us more about your architectural vision…"
+                      rows="5" maxlength="1000"></textarea>
+            <div class="flex justify-between items-center">
+              <span class="hidden text-red-400 text-xs" id="message-err">Min 20 characters.</span>
+              <span class="text-on-surface-variant text-xs ml-auto" id="char-count">0 / 1000</span>
+            </div>
+          </div>
+
+          <!-- Submit -->
+          <!-- Submit button swaps between normal text and loading state in contact.js. -->
+          <button class="submit-btn" id="submit-btn" type="submit">
+            <span id="btn-text" class="flex items-center justify-center gap-2">
+              <span class="material-symbols-outlined u-contact-2">send</span>
+              Send Message
+            </span>
+            <span id="btn-loading" class="hidden items-center justify-center gap-2">
+              <svg class="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
+              </svg>
+              Sending…
+            </span>
+          </button>
+
+          <p class="text-center text-xs text-on-surface-variant opacity-50">
+            <span class="material-symbols-outlined align-middle u-contact-3">lock</span>
+            Your info is never shared.
+          </p>
+        </form>
+      </section>
+    </div>
+
+    <!-- SIDEBAR — 2 cols (Stitch design) -->
+    <div class="lg:col-span-2 flex flex-col gap-4 fade-up delay-2">
+
+      <!-- Email -->
+      <!-- data-contact-action tells contact.js this card should open an email link. -->
+      <div class="info-card contact-clickable glass-card flex items-center gap-4 p-4 rounded-lg border border-white/8 cursor-pointer"
+           data-contact-action="email">
+        <div class="w-12 h-12 flex items-center justify-center rounded-lg bg-soft-teal/10 text-soft-teal shrink-0">
+          <span class="material-symbols-outlined">mail</span>
+        </div>
+        <div class="flex-1">
+          <h4 class="font-label-md text-label-md text-on-surface-variant">Email</h4>
+          <p class="text-on-surface font-body-md text-sm">hello@nexus.showcase</p>
+        </div>
+        <span class="material-symbols-outlined text-on-surface-variant u-contact-2">arrow_forward</span>
+      </div>
+
+      <!-- GitHub -->
+      <!-- data-contact-action tells contact.js this card should open GitHub. -->
+      <div class="info-card contact-clickable glass-card flex items-center gap-4 p-4 rounded-lg border border-white/8 cursor-pointer"
+           data-contact-action="github">
+        <div class="w-12 h-12 flex items-center justify-center rounded-lg bg-soft-teal/10 text-soft-teal shrink-0">
+          <span class="material-symbols-outlined">code</span>
+        </div>
+        <div class="flex-1">
+          <h4 class="font-label-md text-label-md text-on-surface-variant">GitHub</h4>
+          <p class="text-on-surface font-body-md text-sm">github.com/elite-architect</p>
+        </div>
+        <span class="material-symbols-outlined text-on-surface-variant u-contact-2">arrow_forward</span>
+      </div>
+
+      <!-- Response time -->
+      <div class="info-card glass-card flex items-center gap-4 p-4 rounded-lg border border-white/8">
+        <div class="w-12 h-12 flex items-center justify-center rounded-lg bg-soft-teal/10 text-soft-teal shrink-0">
+          <span class="material-symbols-outlined">schedule</span>
+        </div>
+        <div>
+          <h4 class="font-label-md text-label-md text-on-surface-variant">Response Time</h4>
+          <p class="text-on-surface font-body-md text-sm">Within 24 hours</p>
+        </div>
+      </div>
+
+      <!-- Quick links -->
+      <!-- Quick links help users continue to the core portfolio workflow. -->
+      <div class="glass-card rounded-xl p-5 border border-white/8">
+        <h3 class="font-label-md text-label-md text-on-surface-variant uppercase tracking-widest mb-4">Quick Links</h3>
+        <div class="flex flex-col">
+          <a href="templates.html"
+             class="flex items-center justify-between py-2.5 border-b border-white/5
+                    text-sm text-on-surface-variant hover:text-soft-teal transition-colors group">
+            Browse Templates
+            <span class="material-symbols-outlined group-hover:translate-x-1 transition-transform u-contact-4">arrow_forward</span>
+          </a>
+          <a href="builder.html"
+             class="flex items-center justify-between py-2.5 border-b border-white/5
+                    text-sm text-on-surface-variant hover:text-soft-teal transition-colors group">
+            Start Building
+            <span class="material-symbols-outlined group-hover:translate-x-1 transition-transform u-contact-4">arrow_forward</span>
+          </a>
+          <a href="preview.html"
+             class="flex items-center justify-between py-2.5
+                    text-sm text-on-surface-variant hover:text-soft-teal transition-colors group">
+            Preview Portfolio
+            <span class="material-symbols-outlined group-hover:translate-x-1 transition-transform u-contact-4">arrow_forward</span>
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</main>
+
+
+
+<!-- ════════════════════════════════════════════════════
+     FOOTER (Stitch design)
+════════════════════════════════════════════════════ -->
+<!-- Footer content sits above the shader because it also uses page-content. -->
+<footer class="page-content w-full py-4 bg-surface border-t border-outline-variant
+               flex flex-col md:flex-row items-center gap-3
+               px-container-padding-mobile md:px-container-padding-desktop
+               pb-20 md:pb-4 mt-4">
+  <p class="font-body-sm text-body-sm text-on-surface-variant">© 2026 NEXUS. All rights reserved.</p>
+  <p class="project-credit">Project made by AADITYA, AARUSHI, ARYAN</p>
+  <div class="flex gap-6 md:ml-auto">
+    <a class="text-on-surface-variant hover:text-primary transition-colors font-body-sm" href="#">Terms</a>
+    <a class="text-on-surface-variant hover:text-primary transition-colors font-body-sm" href="#">Privacy</a>
+    <a class="text-on-surface-variant hover:text-primary transition-colors font-body-sm" href="#">Support</a>
+  </div>
+</footer>
+
+<!-- Toast -->
+<!-- Toast notification. contact.js toggles the show class and changes toast-msg text. -->
+<div id="toast" class="glass-card rounded-xl p-4 flex items-center gap-3 border border-soft-teal/20 max-w-xs">
+  <span class="material-symbols-outlined text-soft-teal u-contact-5">check_circle</span>
+  <span id="toast-msg" class="text-sm text-on-surface">Message sent!</span>
+</div>
+
+<!-- ════════════════════════════════════════════════════
+     JAVASCRIPT
+════════════════════════════════════════════════════ -->
+  <!-- Shared JavaScript for theme toggle and mobile navigation. -->
+  <script src="js/main.js"></script>
+
+  <!-- Contact-page JavaScript for shader, validation, submit state, and toast. -->
+  <script src="js/contact.js"></script>
+</body>
+</html>

@@ -1,0 +1,445 @@
+<!DOCTYPE html>
+<!--
+  preview.html shows the full portfolio preview after the user fills details
+  in builder.html. Most visible portfolio content below is placeholder markup
+  at first; JS/preview.js replaces it with the user's saved builder data.
+-->
+<html lang="en" data-theme="dark">
+<head>
+  <!-- UTF-8 supports normal text, symbols, and icons across browsers. -->
+  <meta charset="UTF-8" />
+  <!-- viewport makes CSS pixels match the device width, which is required for
+       responsive layouts and the mobile skills grid to behave correctly. -->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Portfolio Preview — NEXUS</title>
+  <!-- preconnect opens early network connections to Google Fonts. It makes
+       the font files start faster once the stylesheet below requests them. -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <!-- Google Fonts stylesheet:
+       - Syne is used for bold futuristic headings.
+       - DM Sans is used for readable body text.
+       - Material Symbols provides icon glyphs used throughout buttons/chips.
+       This is an external stylesheet link, not a JavaScript API. -->
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600&family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet" />
+  <!-- GSAP powers the desktop skills wheel animation. ScrollTrigger connects
+       scroll position to animation progress, so the wheel can rotate while
+       the user scrolls. These files come from a CDN, so no build step or npm
+       install is needed for this static project. -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
+  <!-- Bootstrap is loaded for its reset/utilities/components if needed by the
+       shared site styles. The preview mostly uses custom CSS, but keeping this
+       link preserves compatibility with the rest of the project. -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" />
+
+  <!-- main.css contains shared navigation/theme styles used across pages.
+       preview.css contains page-specific portfolio preview and animation CSS. -->
+  <link rel="stylesheet" href="css/main.css" />
+  <link rel="stylesheet" href="css/preview.css" />
+</head>
+<body class="preview-page">
+
+  <!-- Background:
+       The canvas is controlled by JS/preview.js using the Canvas API. The blob
+       divs are pure CSS decorative glow layers. They sit behind the page and
+       do not contain content. -->
+  <canvas id="particles-canvas"></canvas>
+  <div class="ambient-blob blob-a"></div>
+  <div class="ambient-blob blob-b"></div>
+
+  <!-- Skill hover tooltip:
+       JS/preview.js fills and positions this box when a desktop user hovers a
+       skill card. It stays outside the wheel so it can follow the cursor. -->
+  <div class="skill-tooltip" id="skillTooltip"></div>
+
+  <!-- ================================================================
+       NAVIGATION
+  ================================================================ -->
+  <!-- The navigation is shared across the site. main.js uses #navbar,
+       #themeToggle, #hamburger, and #mobileMenu to handle scroll styling,
+       theme changes, and mobile menu opening. -->
+  <nav class="navbar-main" id="navbar" aria-label="Primary navigation">
+    <div class="nav-inner">
+      <!-- href links are normal page navigation. This logo returns to the
+           home page and aria-label gives screen readers a clear name. -->
+      <a class="nav-logo" href="index.html" aria-label="NEXUS home">
+        <div class="nav-logo-icon">
+          <span class="material-symbols-outlined nav-logo-symbol">hub</span>
+        </div>
+        <span class="nav-logo-text">NEXUS</span>
+      </a>
+
+      <ul class="nav-links">
+        <li><a href="index.html">Home</a></li>
+        <li><a href="templates.html">Templates</a></li>
+        <li><a href="builder.html">Builder</a></li>
+        <li><a href="preview.html" class="active">Preview</a></li>
+        <li><a href="contact.html">Contact</a></li>
+      </ul>
+
+      <div class="nav-actions-home">
+        <!-- This button does not navigate. main.js listens for clicks and
+             toggles the data-theme value used by CSS variables. -->
+        <button class="theme-toggle" id="themeToggle" type="button" title="Toggle theme" aria-label="Toggle theme">
+          <span class="material-symbols-outlined icon-18" id="themeIcon">dark_mode</span>
+        </button>
+        <a href="builder.html" class="nav-cta">Launch App</a>
+        <!-- aria-expanded is updated by JS so assistive technology can know
+             whether the mobile menu is open. -->
+        <button class="hamburger" id="hamburger" type="button" aria-label="Open navigation" aria-expanded="false">
+          <span class="material-symbols-outlined icon-20">menu</span>
+        </button>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Mobile menu duplicates the main links in a touch-friendly vertical list.
+       main.js opens/closes this block when the hamburger is clicked. -->
+  <div class="mobile-menu" id="mobileMenu">
+    <a href="index.html">Home</a>
+    <a href="templates.html">Templates</a>
+    <a href="builder.html">Builder</a>
+    <a href="preview.html" class="active">Preview</a>
+    <a href="contact.html">Contact</a>
+    <a href="builder.html" class="mobile-launch">Launch App</a>
+  </div>
+
+  <!-- ================================================================
+       HERO INTRO
+  ================================================================ -->
+  <!-- Intro summary above the portfolio mock browser. These stats are mostly
+       presentational; the detailed live values are shown in the meta bar below. -->
+  <div class="preview-intro">
+    <div class="intro-badge">
+      <div class="live-dot"></div>
+      <span>Live Preview Mode</span>
+    </div>
+    <h1 class="intro-title">
+      Your Portfolio,<br /><span class="grad">Fully Rendered</span>
+    </h1>
+    <p class="intro-sub">Scroll through every section exactly as visitors will see it. Click Edit to make changes.</p>
+    <div class="intro-stats">
+      <div class="istat">
+        <div class="istat-num" id="statSections">12</div>
+        <div class="istat-lab">Sections</div>
+      </div>
+      <div class="istat">
+        <div class="istat-num" id="statScore">98%</div>
+        <div class="istat-lab">Build Score</div>
+      </div>
+      <div class="istat">
+        <div class="istat-num">A+</div>
+        <div class="istat-lab">Performance</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================================================================
+       BROWSER SHELL + PORTFOLIO CANVAS
+  ================================================================ -->
+  <!-- Browser shell:
+       This frame makes the generated portfolio feel like a real published
+       website. preview.js updates #portfolioUrl with a slug made from the
+       user's name, but it is only visual and does not publish online. -->
+  <div class="browser-shell-wrap">
+    <div class="browser-shell">
+
+      <!-- Browser chrome bar:
+           The dots, back/forward icons, lock, and URL imitate a browser window
+           so users understand this is what visitors would see. -->
+      <div class="browser-chrome">
+        <div class="chrome-dots"><span></span><span></span><span></span></div>
+        <div class="chrome-nav">
+          <div class="chrome-nav-btn">
+            <span class="material-symbols-outlined u-preview-4">arrow_back</span>
+          </div>
+          <div class="chrome-nav-btn">
+            <span class="material-symbols-outlined u-preview-4">arrow_forward</span>
+          </div>
+        </div>
+        <div class="chrome-url-bar">
+          <span class="material-symbols-outlined u-preview-5">lock</span>
+          <span id="portfolioUrl">alex-sterling.nexus.dev</span>
+        </div>
+        <div class="chrome-actions">
+          <div class="chrome-action-btn" title="Share">
+            <span class="material-symbols-outlined u-preview-6">share</span>
+          </div>
+          <div class="chrome-action-btn" title="Open in new tab">
+            <span class="material-symbols-outlined u-preview-6">open_in_new</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- ============================================================
+           PORTFOLIO CANVAS
+      ============================================================ -->
+      <!-- portfolioCanvas contains the actual generated portfolio. The IDs
+           inside this area are important because preview.js targets them to
+           inject the user's saved name, bio, skills, projects, and contact data. -->
+      <div class="portfolio-canvas" id="portfolioCanvas">
+
+        <!-- ── 1. HERO ── -->
+        <!-- HERO:
+             Default text keeps the page attractive before data loads.
+             preview.js replaces #portName, #portTitle, #portBio, etc. with
+             localStorage data saved from the builder. -->
+        <section class="port-hero" id="portHero">
+          <div class="port-hero-bg">
+            <div class="port-hero-grid"></div>
+          </div>
+          <div class="port-hero-content">
+            <div class="port-avail-badge">
+              <div class="avail-dot"></div>
+              <span id="portAvailLabel">Available for New Opportunities</span>
+            </div>
+            <!-- The img starts empty. If the user uploaded an avatar in the
+                 builder, preview.js sets #portAvatarImg.src and hides the
+                 placeholder symbol. -->
+            <div class="port-hero-avatar" id="portAvatar">
+              <img id="portAvatarImg" src="" alt="Avatar" />
+              <span class="avatar-placeholder" id="portAvatarPlaceholder">👤</span>
+            </div>
+            <h1 class="port-hero-name" id="portName">Alex Sterling</h1>
+            <div class="port-hero-title" id="portTitle">Senior Full-Stack Developer</div>
+            <div class="port-hero-tagline" id="portTagline">"Crafting Digital Architectures &amp; Fluid User Experiences."</div>
+            <p class="port-hero-bio" id="portBio">Specializing in high-performance cloud applications and polished aesthetic design systems. I turn complex problems into elegant, scalable solutions.</p>
+            <div class="port-hero-meta">
+              <span class="port-meta-chip" id="portLocation">
+                <span class="material-symbols-outlined u-preview-3">location_on</span>
+                New Delhi, India
+              </span>
+              <span class="port-meta-chip" id="portEmail">
+                <span class="material-symbols-outlined u-preview-3">mail</span>
+                hello@alexsterling.dev
+              </span>
+            </div>
+            <!-- Social anchors start as demo links. preview.js rebuilds this
+                 whole block with real GitHub, LinkedIn, Twitter, or Website
+                 URLs when those fields exist. -->
+            <div class="port-hero-socials" id="portSocials">
+              <a class="port-social" href="#">
+                <span class="material-symbols-outlined u-preview-2">code</span>
+                GitHub
+              </a>
+              <a class="port-social" href="#">
+                <span class="material-symbols-outlined u-preview-2">work</span>
+                LinkedIn
+              </a>
+              <a class="port-social" href="#">
+                <span class="material-symbols-outlined u-preview-2">language</span>
+                Website
+              </a>
+            </div>
+          </div>
+          <div class="port-hero-scroll-hint">
+            <div class="scroll-arrow"></div>
+            <span>Scroll to explore</span>
+          </div>
+        </section>
+
+        <div class="port-divider"></div>
+
+        <!-- ── 2. SKILLS — RADIAL SCROLL GALLERY ── -->
+        <!-- SKILLS:
+             Desktop: preview.js fills #radialWheel with skill cards, places
+             them around a circle, and GSAP rotates that circle while scrolling.
+             Mobile: preview.js adds .mobile-skills-mode and the same #radialWheel
+             becomes a clean animated grid to avoid clustering. -->
+        <section class="radial-section" id="skillsSection">
+          <div class="radial-header sr">
+            <div class="port-section-label">Technical Arsenal</div>
+            <h2 class="port-section-title port-section-title-tight">Skills &amp; Technologies</h2>
+            <p class="port-section-sub port-section-sub-centered">
+              Scroll through the wheel to explore my tech stack — hover a skill to learn more.
+            </p>
+          </div>
+
+          <!-- Radial gallery pin wrapper:
+               ScrollTrigger pins this wrapper on desktop so the wheel stays in
+               view while the scroll position controls rotation. -->
+          <div id="radialPin">
+            <div class="radial-clip" id="radialClip">
+              <!-- Empty on purpose. preview.js creates each <li> skill card
+                   from saved builder data so the HTML does not need to know
+                   the user's skill list in advance. -->
+              <ul id="radialWheel"></ul>
+              <!-- Center label changes when a user hovers or taps a skill. -->
+              <div class="wheel-center-label" id="wheelCenterLabel">
+                <h3>Skills</h3>
+                <p>Hover to explore</p>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <div class="port-divider"></div>
+
+        <!-- ── 3. EXPERIENCE ── -->
+        <div class="port-section">
+          <div class="sr">
+            <div class="port-section-label">Career Path</div>
+            <h2 class="port-section-title">Work Experience</h2>
+            <p class="port-section-sub">A decade of building things that matter.</p>
+          </div>
+          <!-- Filled by preview.js because the user's work history comes from
+               the builder form and may be different for every portfolio. -->
+          <div class="exp-timeline" id="expTimeline">
+            <!-- Filled by JS from draft data -->
+          </div>
+        </div>
+
+        <div class="port-divider"></div>
+
+        <!-- ── 4. PROJECTS — BENTO GRID ── -->
+        <div class="port-section">
+          <div class="sr">
+            <div class="port-section-label">Featured Work</div>
+            <h2 class="port-section-title">Project Showcase</h2>
+            <p class="port-section-sub">Selected projects that define my craft.</p>
+          </div>
+          <!-- Filled by preview.js from the builder's project list. CSS then
+               turns these generated cards into a bento-style project grid. -->
+          <div class="projects-bento" id="projectsBento">
+            <!-- Filled by JS -->
+          </div>
+        </div>
+
+        <div class="port-divider"></div>
+
+        <!-- ── 5. CONTACT ── -->
+        <div class="port-section sr">
+          <div class="port-section-label">Get In Touch</div>
+          <h2 class="port-section-title">Let's Build Together</h2>
+          <p class="port-section-sub">Have a project in mind? I'm always open to new collaborations.</p>
+          <div class="contact-grid">
+            <!-- Filled by preview.js from saved email, location, and profile
+                 links. Empty contact fields are skipped. -->
+            <div class="contact-info" id="contactInfo">
+              <!-- Filled by JS -->
+            </div>
+            <!-- This is a visual preview of a contact form. It does not submit
+                 to an email service or backend API in this static page. -->
+            <div class="contact-form-stub">
+              <div class="contact-form-title">Send a Message</div>
+              <div class="cform-field">
+                <label>Your Name</label>
+                <input type="text" placeholder="John Doe" />
+              </div>
+              <div class="cform-field">
+                <label>Email</label>
+                <input type="email" placeholder="john@example.com" />
+              </div>
+              <div class="cform-field">
+                <label>Message</label>
+                <textarea placeholder="Tell me about your project..."></textarea>
+              </div>
+              <button class="cform-submit">Send Message →</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Portfolio footer -->
+        <div class="port-footer">
+          <div class="port-footer-name" id="portFooterName">Alex Sterling</div>
+          <div class="port-footer-copy">Built with NEXUS · © 2024</div>
+        </div>
+
+      </div><!-- /portfolio-canvas -->
+    </div><!-- /browser-shell -->
+  </div><!-- /browser-shell-wrap -->
+
+  <!-- ================================================================
+       META BAR (below browser)
+  ================================================================ -->
+  <!-- Meta bar:
+       This summary sits outside the browser mockup so the builder app can show
+       portfolio status and actions without being part of the portfolio itself. -->
+  <div class="meta-bar">
+    <div class="meta-bar-inner">
+      <div class="meta-stats">
+        <div class="meta-stat-item">
+          <div class="meta-stat-label">Active Sections</div>
+          <div class="meta-stat-val">5</div>
+        </div>
+        <div class="meta-stat-item">
+          <div class="meta-stat-label">Selected Theme</div>
+          <div class="meta-stat-val" id="metaTheme">Teal Dark</div>
+        </div>
+        <div class="meta-stat-item">
+          <div class="meta-stat-label">Build Score</div>
+          <div class="meta-stat-val">98%</div>
+        </div>
+        <div class="meta-stat-item">
+          <div class="meta-stat-label">Skills</div>
+          <div class="meta-stat-val" id="metaSkills">8</div>
+        </div>
+        <div class="meta-stat-item">
+          <div class="meta-stat-label">Projects</div>
+          <div class="meta-stat-val" id="metaProjects">3</div>
+        </div>
+      </div>
+      <div class="meta-actions">
+        <!-- Normal link back to the builder page, where the user can edit the
+             same localStorage draft that preview.js is reading. -->
+        <a href="builder.html" class="meta-btn meta-btn-secondary">
+          <span class="material-symbols-outlined u-preview-7">edit</span>
+          Edit Portfolio
+        </a>
+        <!-- Normal link to the template gallery. It does not change data by
+             itself; it only navigates to another page. -->
+        <a href="templates.html" class="meta-btn meta-btn-secondary">
+          <span class="material-symbols-outlined u-preview-7">grid_view</span>
+          Change Template
+        </a>
+        <!-- JS/preview.js listens to #goLiveBtn. In this static version it shows
+             a success state and confetti; it does not call a deployment API. -->
+        <button class="meta-btn meta-btn-primary" id="goLiveBtn">
+          <span class="material-symbols-outlined u-preview-7">rocket_launch</span>
+          Go Live
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- FAB:
+       Floating action button for quick editing. It is a normal link, fixed in
+       CSS so it stays reachable while scrolling the long preview. -->
+  <a href="builder.html" class="fab" title="Edit Portfolio">
+    <span class="material-symbols-outlined u-preview-8">edit</span>
+  </a>
+
+  <!-- Page Footer:
+       These links are page navigation placeholders. Help goes to contact.html;
+       Privacy and Terms are # placeholders until real pages are added. -->
+  <footer class="page-footer">
+    <div>
+      <div class="pf-logo">
+        <span class="material-symbols-outlined u-preview-9">hub</span>
+        NEXUS
+      </div>
+      <div class="pf-copy">© 2026 NEXUS. All rights reserved.</div>
+    </div>
+    <div class="pf-links">
+      <a href="#">Privacy</a>
+      <a href="#">Terms</a>
+      <a href="contact.html">Help</a>
+    </div>
+  </footer>
+
+  <!-- Bootstrap bundle includes Bootstrap's JavaScript plugins. This page does
+       not rely heavily on them, but the shared project includes Bootstrap so
+       the bundle is kept for compatibility. -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
+  <!-- main.js handles shared site behavior such as navbar scroll state,
+       mobile menu toggling, and theme button behavior. -->
+  <script src="js/main.js"></script>
+
+  <!-- preview.js is the page-specific controller. It reads localStorage,
+       fills the portfolio placeholders, creates the skills animation, handles
+       reveal effects, and powers the preview action buttons. -->
+  <script src="js/preview.js"></script>
+</body>
+</html>

@@ -1,0 +1,1070 @@
+/* ============================================================
+       DESIGN TOKENS
+
+       These CSS variables are shared values for the builder page. They keep
+       colors, spacing, borders, font choices, and animation timing consistent.
+       builder.js changes classes and state; these variables decide how those
+       states look visually.
+    ============================================================ */
+    :root {
+      --bg:           #020817;
+      --bg-mid:       #0b1223;
+      --bg-card:      rgba(15,23,42,0.7);
+      --bg-glass:     rgba(20,32,55,0.55);
+      --bg-input:     rgba(0,0,0,0.25);
+      --border:       rgba(255,255,255,0.07);
+      --border-focus: rgba(45,212,191,0.5);
+      --border-glow:  rgba(45,212,191,0.25);
+      --teal:         #2DD4BF;
+      --teal-dim:     rgba(45,212,191,0.1);
+      --teal-mid:     rgba(45,212,191,0.2);
+      --primary:      #bec6dc;
+      --on-primary:   #0b1c30;
+      --text:         #e2e8f0;
+      --text-muted:   #7a8fa8;
+      --text-subtle:  #3d5068;
+      --error:        #f87171;
+      --success:      #34d399;
+      --font-head:    'Syne', sans-serif;
+      --font-body:    'DM Sans', sans-serif;
+      --radius-sm:    8px;
+      --radius-md:    14px;
+      --radius-lg:    22px;
+      --radius-xl:    32px;
+      --sidebar-w:    260px;
+      --header-h:     72px;
+      --transition:   all 0.3s cubic-bezier(0.4,0,0.2,1);
+      --shadow-glow:  0 0 32px rgba(45,212,191,0.12);
+    }
+    /* Light theme changes the same variables instead of rewriting every rule.
+       Because the components use var(...), the page can switch themes cleanly. */
+    [data-theme="light"] {
+      --bg:       #f0f4ff;
+      --bg-mid:   #e4eaf8;
+      --bg-card:  rgba(255,255,255,0.85);
+      --bg-glass: rgba(240,244,255,0.8);
+      --bg-input: rgba(255,255,255,0.7);
+      --border:   rgba(0,0,0,0.08);
+      --text:     #0f172a;
+      --text-muted: #4a5568;
+      --text-subtle:#94a3b8;
+    }
+
+    /* ============================================================
+       RESET & BASE
+    ============================================================ */
+    /* border-box prevents inputs, cards, and panels from overflowing when
+       padding and borders are added to fixed or grid widths. */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--font-body);
+      font-size: 15px;
+      line-height: 1.6;
+      /* Animated glows and fixed canvases can extend past the viewport.
+         Hiding horizontal overflow prevents accidental side scrolling. */
+      overflow-x: hidden;
+      min-height: 100vh;
+    }
+    ::selection { background: var(--teal); color: #000; }
+
+    /* Material Symbols are an icon font loaded in builder.html. These settings
+       choose the outlined style and align icons with text. */
+    .material-symbols-outlined {
+      font-variation-settings: 'FILL' 0,'wght' 400,'GRAD' 0,'opsz' 24;
+      vertical-align: middle;
+      line-height: 1;
+    }
+
+    /* ============================================================
+       PARTICLES
+
+       builder.js draws into this canvas with the Canvas API. The canvas is
+       fixed behind the UI and ignores pointer events so it never blocks form
+       fields, buttons, or scrolling.
+    ============================================================ */
+    #particles-canvas {
+      position: fixed; inset: 0;
+      width: 100%; height: 100%;
+      z-index: 0; pointer-events: none;
+    }
+
+    /* Ambient radial glow blobs add depth behind the builder. They are purely
+       decorative and use blur so they feel like light rather than UI elements. */
+    .ambient {
+      position: fixed; border-radius: 50%;
+      pointer-events: none; z-index: 0; filter: blur(80px);
+    }
+    .ambient-1 {
+      width: 500px; height: 500px;
+      background: radial-gradient(circle, rgba(45,212,191,0.06), transparent 70%);
+      top: -100px; left: -100px;
+    }
+    .ambient-2 {
+      width: 400px; height: 400px;
+      background: radial-gradient(circle, rgba(99,102,241,0.05), transparent 70%);
+      bottom: -80px; right: -80px;
+    }
+
+    /* ============================================================
+       MAIN LAYOUT (Sidebar + Canvas)
+
+       The builder is a fixed sidebar plus a main work area. padding-top uses
+       --header-h so content starts below the shared navbar.
+    ============================================================ */
+    .builder-layout {
+      display: flex;
+      min-height: 100vh;
+      padding-top: var(--header-h);
+      /* z-index keeps the real app UI above the decorative canvases/blobs. */
+      position: relative; z-index: 1;
+    }
+
+    /* ============================================================
+       LEFT SIDEBAR — STEP NAV
+    ============================================================ */
+    /* The sidebar is fixed so progress and Save Draft stay available while the
+       form panel scrolls. */
+    .sidebar {
+      width: var(--sidebar-w);
+      /* Prevents the sidebar from shrinking when the main content gets tight. */
+      flex-shrink: 0;
+      position: fixed;
+      top: var(--header-h);
+      left: 0;
+      bottom: 0;
+      overflow-y: auto;
+      background: rgba(2,8,23,0.6);
+      /* Blur creates a glass effect over the animated background while keeping
+         the navigation readable. */
+      backdrop-filter: blur(20px);
+      border-right: 1px solid var(--border);
+      padding: 28px 0;
+      z-index: 100;
+      display: flex; flex-direction: column;
+    }
+    .sidebar::-webkit-scrollbar { width: 0; }
+    .sidebar-head {
+      padding: 0 20px 20px;
+      border-bottom: 1px solid var(--border);
+      margin-bottom: 16px;
+    }
+    .sidebar-head-label {
+      font-size: 10px; font-weight: 700;
+      letter-spacing: 0.12em; text-transform: uppercase;
+      color: var(--text-subtle);
+      margin-bottom: 4px;
+    }
+    .sidebar-head-title {
+      font-family: var(--font-head);
+      font-size: 18px; font-weight: 800;
+      letter-spacing: 0;
+    }
+
+    /* Steps nav:
+       .active and .done are toggled by builder.js to reflect the current step
+       and completed steps. */
+    .step-nav-item {
+      display: flex; align-items: center; gap: 14px;
+      padding: 12px 20px;
+      cursor: pointer;
+      transition: var(--transition);
+      position: relative;
+      /* The left border becomes the primary progress indicator for each step. */
+      border-left: 3px solid transparent;
+      margin: 2px 0;
+    }
+    .step-nav-item.active {
+      border-left-color: var(--teal);
+      background: rgba(45,212,191,0.06);
+    }
+    .step-nav-item.done {
+      border-left-color: rgba(52,211,153,0.4);
+    }
+    .step-nav-item:hover:not(.active) {
+      background: rgba(255,255,255,0.03);
+      border-left-color: var(--border-glow);
+    }
+    .step-bubble {
+      width: 32px; height: 32px; border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-family: var(--font-head);
+      font-size: 13px; font-weight: 700;
+      flex-shrink: 0;
+      border: 2px solid var(--border);
+      color: var(--text-muted);
+      transition: var(--transition);
+    }
+    .step-nav-item.active .step-bubble {
+      background: var(--teal); border-color: var(--teal);
+      color: var(--on-primary);
+      box-shadow: 0 0 16px rgba(45,212,191,0.4);
+    }
+    .step-nav-item.done .step-bubble {
+      background: rgba(52,211,153,0.15);
+      border-color: rgba(52,211,153,0.4);
+      color: var(--success);
+    }
+    
+    .step-nav-name {
+      font-size: 13px; font-weight: 600;
+      color: var(--text-muted);
+      transition: color 0.2s;
+    }
+    .step-nav-item.active .step-nav-name { color: var(--text); }
+    .step-nav-desc {
+      font-size: 11px; color: var(--text-subtle);
+      margin-top: 1px;
+    }
+    .step-connector {
+      width: 2px; height: 20px;
+      margin: 0 0 0 30px;
+      background: linear-gradient(to bottom, var(--border), transparent);
+    }
+
+    /* Progress bar at bottom of sidebar:
+       builder.js updates #progressFill width and #progressPct text after every
+       step change. */
+    .sidebar-progress {
+      margin-top: auto;
+      padding: 20px;
+      border-top: 1px solid var(--border);
+    }
+    .progress-label {
+      display: flex; justify-content: space-between; align-items: center;
+      margin-bottom: 8px;
+    }
+    .progress-label span:first-child { font-size: 11px; color: var(--text-muted); font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; }
+    .progress-label span:last-child { font-size: 13px; font-weight: 700; color: var(--teal); }
+    .progress-track {
+      height: 4px; border-radius: 999px;
+      background: rgba(255,255,255,0.06);
+      /* overflow hidden clips the animated fill inside the rounded track. */
+      overflow: hidden;
+    }
+    .progress-fill {
+      height: 100%; border-radius: 999px;
+      background: linear-gradient(90deg, var(--teal), #38bdf8);
+      transition: width 0.5s cubic-bezier(0.4,0,0.2,1);
+      box-shadow: 0 0 8px rgba(45,212,191,0.5);
+    }
+
+    /* ============================================================
+       MAIN CONTENT AREA
+    ============================================================ */
+    .builder-main {
+      flex: 1;
+      margin-left: var(--sidebar-w);
+      display: flex;
+      flex-direction: column;
+      min-height: calc(100vh - var(--header-h));
+    }
+
+    /* Split: Form left, Preview right.
+       The two-column grid lets users edit and see changes at the same time. */
+    .builder-split {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0;
+      flex: 1;
+      min-height: calc(100vh - var(--header-h) - 60px);
+    }
+
+    /* ============================================================
+       FORM PANEL (Left)
+
+       The form scrolls independently from the page. This keeps the right live
+       preview stable while users move through long form sections.
+    ============================================================ */
+    .form-panel {
+      padding: 36px 32px;
+      border-right: 1px solid var(--border);
+      /* Independent scrolling avoids moving the whole app shell. */
+      overflow-y: auto;
+      max-height: calc(100vh - var(--header-h) - 60px);
+    }
+    .form-panel::-webkit-scrollbar { width: 4px; }
+    .form-panel::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+    .step-header {
+      margin-bottom: 28px;
+    }
+    .step-step-label {
+      font-size: 10px; font-weight: 700;
+      letter-spacing: 0.12em; text-transform: uppercase;
+      color: var(--teal); margin-bottom: 6px;
+    }
+    .step-title {
+      font-family: var(--font-head);
+      font-size: 26px; font-weight: 800;
+      letter-spacing: 0; margin-bottom: 6px;
+    }
+    .step-subtitle {
+      font-size: 14px; color: var(--text-muted); font-weight: 300;
+    }
+
+    /* Form fields:
+       Inputs use dark glass styling, strong focus states, and consistent
+       typography so the builder feels like a single tool rather than default
+       browser controls. */
+    .field-group {
+      margin-bottom: 20px;
+    }
+    .field-label {
+      display: block;
+      font-size: 12px; font-weight: 600;
+      text-transform: uppercase; letter-spacing: 0.06em;
+      color: var(--text-muted);
+      margin-bottom: 8px;
+    }
+    .field-label .req { color: var(--teal); margin-left: 2px; }
+    .field-input, .field-textarea, .field-select {
+      width: 100%;
+      background: rgba(5, 13, 27, 0.86);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 12px 16px;
+      color: #f8fafc;
+      -webkit-text-fill-color: #f8fafc;
+      caret-color: var(--teal);
+      font-family: var(--font-body);
+      font-size: 14px;
+      font-weight: 500;
+      line-height: 1.55;
+      /* Remove default outline because a custom focus ring is defined below. */
+      outline: none;
+      transition: var(--transition);
+      text-shadow: 0 1px 1px rgba(0,0,0,0.22);
+      /* -webkit-appearance: none; */
+    }
+    .field-input::placeholder, .field-textarea::placeholder {
+      color: rgba(148,163,184,0.62);
+      -webkit-text-fill-color: rgba(148,163,184,0.62);
+      text-shadow: none;
+    }
+    .field-input:focus, .field-textarea:focus, .field-select:focus {
+      /* The teal ring is the accessibility/attention cue that the field is
+         active after removing the browser's default outline. */
+      border-color: var(--border-focus);
+      background: rgba(7, 18, 36, 0.94);
+      box-shadow: 0 0 0 3px rgba(45,212,191,0.08), inset 0 0 0 1px rgba(45,212,191,0.1);
+    }
+    /* builder.js adds .error when required validation fails. */
+    .field-input.error, .field-textarea.error { border-color: var(--error); }
+    .field-textarea {
+      /* Vertical resize gives users room for longer descriptions without
+         allowing horizontal resize to break the layout. */
+      resize: vertical;
+      min-height: 128px;
+      display: block;
+      padding-top: 16px;
+      padding-bottom: 18px;
+      line-height: 1.65;
+      overflow-y: auto;
+      scrollbar-gutter: stable;
+      vertical-align: top;
+    }
+    #expDesc { min-height: 152px; }
+    /* Browsers often force autofill colors. These rules keep autofilled text
+       readable against the custom input background. */
+    .field-input:-webkit-autofill,
+    .field-textarea:-webkit-autofill,
+    .field-select:-webkit-autofill {
+      box-shadow: 0 0 0 1000px rgba(226,239,255,0.96) inset !important;
+      -webkit-text-fill-color: #07111f !important;
+      caret-color: #07111f;
+      text-shadow: none;
+    }
+    .field-hint { font-size: 11px; color: var(--text-subtle); margin-top: 5px; }
+    .field-count { font-size: 11px; color: var(--text-subtle); text-align: right; margin-top: 4px; }
+    .field-error { font-size: 11px; color: var(--error); margin-top: 5px; display: none; }
+    .field-error.show { display: block; }
+
+    /* Two column row. Responsive rules collapse this to one column on mobile. */
+    .field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+
+    /* Tag chips (skills):
+       builder.js inserts/removes .tag-chip elements inside this container.
+       flex-wrap lets chips create new rows naturally as the list grows. */
+    .tags-container {
+      display: flex; flex-wrap: wrap; gap: 8px;
+      padding: 12px;
+      background: var(--bg-input);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      min-height: 52px;
+      /* The whole chip area behaves like an input target; builder.js focuses
+         the hidden text input when the container is clicked. */
+      cursor: text;
+      transition: var(--transition);
+    }
+    .tags-container:focus-within {
+      /* focus-within lights up the whole tag editor when the inner input is
+         focused, making the multi-chip control feel like one field. */
+      border-color: var(--border-focus);
+      box-shadow: 0 0 0 3px rgba(45,212,191,0.08);
+    }
+    .tag-chip {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 4px 12px;
+      background: var(--teal-dim);
+      border: 1px solid rgba(45,212,191,0.2);
+      border-radius: 999px;
+      font-size: 12px; font-weight: 600;
+      color: var(--teal);
+      /* Newly added skill chips pop in briefly so the user sees the action. */
+      animation: chipIn 0.2s ease;
+    }
+    .tag-chip .remove {
+      cursor: pointer; font-size: 14px; line-height: 1;
+      opacity: 0.7; transition: opacity 0.2s;
+    }
+    .tag-chip .remove:hover { opacity: 1; }
+    .tags-input {
+      border: none; background: transparent;
+      outline: none; color: var(--text);
+      font-family: var(--font-body);
+      font-size: 13px; min-width: 120px; flex: 1;
+      padding: 2px 4px;
+    }
+    @keyframes chipIn {
+      from { transform: scale(0.8); opacity: 0; }
+      to   { transform: scale(1);   opacity: 1; }
+    }
+
+    /* Color picker row:
+       Each swatch has a data-color in HTML. builder.js reads that value and
+       updates the preview theme. */
+    .color-picker-row {
+      display: flex; gap: 12px; flex-wrap: wrap;
+    }
+    .color-swatch {
+      width: 36px; height: 36px; border-radius: 50%;
+      cursor: pointer; border: 3px solid transparent;
+      transition: var(--transition); position: relative;
+    }
+    .color-swatch.selected {
+      /* The double ring makes the selected swatch visible even when the color
+         itself is dark or close to the background. */
+      border-color: var(--text);
+      box-shadow: 0 0 0 2px var(--bg), 0 0 0 4px currentColor;
+    }
+    .color-swatch::after {
+      content: '✓';
+      position: absolute; inset: 0;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 14px; font-weight: 700;
+      color: #fff; opacity: 0;
+      transition: opacity 0.2s;
+    }
+    .color-swatch.selected::after { opacity: 1; }
+
+    /* Avatar upload:
+       The real file input is hidden. The round preview is the visible click
+       target, and builder.js forwards the click to #avatarInput. */
+    .avatar-upload-area {
+      display: flex; align-items: center; gap: 20px;
+    }
+    .avatar-preview {
+      width: 72px; height: 72px; border-radius: 50%;
+      background: var(--bg-input);
+      border: 2px dashed var(--border);
+      display: flex; align-items: center; justify-content: center;
+      overflow: hidden; flex-shrink: 0;
+      transition: var(--transition); cursor: pointer;
+      position: relative;
+    }
+    .avatar-preview:hover { border-color: var(--border-focus); }
+    /* object-fit:cover crops uploaded photos neatly into the circular frame. */
+    .avatar-preview img { width: 100%; height: 100%; object-fit: cover; display: none; }
+    .avatar-preview .placeholder { color: var(--text-subtle); font-size: 28px; }
+    .avatar-upload-meta { flex: 1; }
+    .avatar-upload-meta h4 { font-size: 14px; font-weight: 600; margin-bottom: 4px; }
+    .avatar-upload-meta p { font-size: 12px; color: var(--text-muted); }
+    #avatarInput { display: none; }
+
+    /* Project card:
+       Cards are created dynamically by builder.js. The slideIn animation makes
+       added cards feel intentional instead of suddenly appearing. */
+    .project-card-item {
+      background: var(--bg-glass);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      padding: 16px;
+      margin-bottom: 12px;
+      position: relative;
+      transition: var(--transition);
+      animation: slideIn 0.3s ease;
+    }
+    .project-card-item:hover { border-color: var(--border-glow); }
+    @keyframes slideIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    .project-card-head {
+      display: flex; justify-content: space-between; align-items: center;
+      margin-bottom: 12px;
+    }
+    .project-card-num {
+      font-size: 10px; font-weight: 700;
+      color: var(--teal); text-transform: uppercase; letter-spacing: 0.1em;
+    }
+    .project-card-remove {
+      width: 26px; height: 26px; border-radius: 50%;
+      background: rgba(248,113,113,0.1); border: 1px solid rgba(248,113,113,0.2);
+      color: var(--error); cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 16px; transition: var(--transition);
+    }
+    .project-card-remove:hover { background: rgba(248,113,113,0.2); }
+    .add-project-btn {
+      display: flex; align-items: center; justify-content: center; gap: 8px;
+      width: 100%; padding: 12px;
+      border: 1px dashed var(--border);
+      border-radius: var(--radius-md);
+      background: transparent;
+      color: var(--text-muted);
+      font-size: 13px; font-weight: 600;
+      cursor: pointer; transition: var(--transition);
+    }
+    .add-project-btn:hover {
+      border-color: var(--border-glow);
+      color: var(--teal);
+      background: var(--teal-dim);
+    }
+
+    /* Navigation buttons:
+       data-action attributes in HTML connect these buttons to builder.js. CSS
+       makes primary actions visually stronger than back/secondary actions. */
+    .form-nav {
+      display: flex; justify-content: space-between; align-items: center;
+      padding-top: 24px; margin-top: 8px;
+      border-top: 1px solid var(--border);
+    }
+    .btn-back {
+      display: flex; align-items: center; gap: 6px;
+      padding: 10px 20px;
+      border-radius: 999px;
+      border: 1px solid var(--border);
+      background: transparent;
+      color: var(--text-muted);
+      font-size: 13px; font-weight: 600;
+      cursor: pointer; transition: var(--transition);
+    }
+    .btn-back:hover { border-color: var(--border-glow); color: var(--text); }
+    .btn-back:disabled { opacity: 0.3; cursor: not-allowed; }
+    .btn-next {
+      display: flex; align-items: center; gap: 8px;
+      padding: 11px 28px;
+      border-radius: 999px;
+      background: linear-gradient(135deg, var(--teal), #0ea5e9);
+      border: none; color: var(--on-primary);
+      font-size: 14px; font-weight: 700;
+      cursor: pointer; transition: var(--transition);
+      /* overflow hidden clips the hover shine inside the rounded pill shape. */
+      position: relative; overflow: hidden;
+    }
+    .btn-next::before {
+      content: '';
+      position: absolute; inset: 0;
+      background: rgba(255,255,255,0.15);
+      opacity: 0; transition: opacity 0.2s;
+    }
+    .btn-next:hover::before { opacity: 1; }
+    .btn-next:hover { box-shadow: 0 0 24px rgba(45,212,191,0.4); transform: translateY(-1px); }
+    .btn-finish {
+      background: linear-gradient(135deg, #34d399, #0ea5e9);
+    }
+
+    /* Step panels:
+       builder.js toggles .active and .panel-out. CSS handles the actual slide
+       animation, keeping movement separate from logic. */
+    .step-panel { display: none; }
+    .step-panel.active {
+      display: block;
+      animation: panelIn 0.35s cubic-bezier(0.4,0,0.2,1);
+    }
+    @keyframes panelIn {
+      from { opacity: 0; transform: translateX(16px); }
+      to   { opacity: 1; transform: translateX(0); }
+    }
+    .panel-out {
+      animation: panelOut 0.25s cubic-bezier(0.4,0,0.2,1) forwards;
+    }
+    @keyframes panelOut {
+      from { opacity: 1; transform: translateX(0); }
+      to   { opacity: 0; transform: translateX(-16px); }
+    }
+
+    /* ============================================================
+       PREVIEW PANEL (Right)
+
+       The preview panel is sticky so it remains visible while the form scrolls.
+       builder.js continuously rewrites #portfolioRender inside this panel.
+    ============================================================ */
+    .preview-panel {
+      background: rgba(2,8,23,0.4);
+      display: flex; flex-direction: column;
+      /* sticky anchors the preview under the navbar while still allowing the
+         overall page layout to behave naturally. */
+      position: sticky;
+      top: var(--header-h);
+      height: calc(100vh - var(--header-h) - 60px);
+      overflow: hidden;
+    }
+    .preview-topbar {
+      padding: 14px 20px;
+      border-bottom: 1px solid var(--border);
+      display: flex; align-items: center; justify-content: space-between;
+      flex-shrink: 0;
+    }
+    .preview-label {
+      display: flex; align-items: center; gap: 8px;
+      font-size: 11px; font-weight: 700; letter-spacing: 0.1em;
+      text-transform: uppercase; color: var(--text-muted);
+    }
+    .preview-live-dot {
+      /* The pulsing dot tells users the preview is live and reacting to input. */
+      width: 8px; height: 8px; border-radius: 50%;
+      background: var(--success);
+      box-shadow: 0 0 8px var(--success);
+      animation: livePulse 2s infinite;
+    }
+    @keyframes livePulse {
+      0%,100% { box-shadow: 0 0 8px var(--success); }
+      50%      { box-shadow: 0 0 16px var(--success); }
+    }
+    .preview-device-btns {
+      display: flex; gap: 6px;
+    }
+    .preview-device-btn {
+      width: 28px; height: 28px; border-radius: 6px;
+      border: 1px solid var(--border);
+      background: transparent;
+      color: var(--text-subtle);
+      cursor: pointer; display: flex; align-items: center; justify-content: center;
+      transition: var(--transition); font-size: 14px;
+    }
+    .preview-device-btn.active, .preview-device-btn:hover {
+      border-color: var(--border-glow);
+      color: var(--teal);
+      background: var(--teal-dim);
+    }
+
+    /* Browser chrome:
+       This frame makes the mini preview look like a real website window, which
+       helps users understand the right side is output, not another form. */
+    .preview-browser {
+      margin: 12px 16px;
+      border-radius: var(--radius-md);
+      /* Clips preview content to the rounded browser shell. */
+      overflow: hidden;
+      border: 1px solid var(--border);
+      flex: 1;
+      display: flex; flex-direction: column;
+      background: rgba(2,8,23,0.9);
+    }
+    .browser-chrome {
+      background: rgba(15,23,42,0.95);
+      padding: 10px 16px;
+      display: flex; align-items: center; gap: 10px;
+      border-bottom: 1px solid var(--border);
+      flex-shrink: 0;
+    }
+    .chrome-dots { display: flex; gap: 5px; }
+    .chrome-dots span { width: 10px; height: 10px; border-radius: 50%; }
+    .chrome-dots span:nth-child(1) { background: #ff5f57; }
+    .chrome-dots span:nth-child(2) { background: #febc2e; }
+    .chrome-dots span:nth-child(3) { background: #28c840; }
+    .chrome-url {
+      flex: 1; max-width: 220px;
+      background: rgba(255,255,255,0.05);
+      border-radius: 5px; padding: 5px 12px;
+      font-size: 11px; color: var(--text-muted);
+    }
+
+    /* Portfolio preview content:
+       The inner area scrolls because the generated mini portfolio can be taller
+       than the available right panel height. */
+    .preview-content {
+      flex: 1; overflow-y: auto; padding: 0;
+    }
+    .preview-content::-webkit-scrollbar { width: 3px; }
+    .preview-content::-webkit-scrollbar-thumb { background: var(--border); }
+
+    /* Portfolio render:
+       These rules style the compact live preview generated by builder.js. The
+       full preview page has its own larger, more detailed styles. */
+    .portfolio-render {
+      min-height: 100%;
+      background: #020817;
+      font-family: var(--font-body);
+    }
+    .port-hero {
+      padding: 40px 28px 32px;
+      background: linear-gradient(135deg, #020817 0%, #0b1223 100%);
+      /* overflow hidden keeps the decorative hero glow inside the preview hero. */
+      position: relative; overflow: hidden;
+    }
+    .port-hero::before {
+      /* Decorative glow adds depth to the compact preview without extra HTML. */
+      content: '';
+      position: absolute; top: -50px; right: -50px;
+      width: 200px; height: 200px; border-radius: 50%;
+      background: radial-gradient(circle, rgba(45,212,191,0.08), transparent 70%);
+    }
+    .port-avatar {
+      width: 64px; height: 64px; border-radius: 50%;
+      border: 3px solid rgba(45,212,191,0.3);
+      object-fit: cover; margin-bottom: 14px;
+      background: rgba(45,212,191,0.1);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 24px; overflow: hidden;
+    }
+    .port-avatar img { width: 100%; height: 100%; object-fit: cover; }
+    .port-name {
+      font-family: var(--font-head);
+      font-size: 24px; font-weight: 800;
+      letter-spacing: 0; color: #e2e8f0;
+      margin-bottom: 4px;
+    }
+    .port-name.empty { color: var(--text-subtle); font-style: italic; font-size: 18px; }
+    .port-title { font-size: 13px; color: var(--teal); font-weight: 600; margin-bottom: 10px; }
+    .port-bio { font-size: 13px; color: #7a8fa8; line-height: 1.6; font-weight: 300; max-width: 380px; }
+    .port-socials { display: flex; gap: 8px; margin-top: 14px; }
+    .port-social-chip {
+      display: inline-flex; align-items: center; gap: 5px;
+      padding: 4px 10px;
+      background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 999px;
+      font-size: 11px; color: #7a8fa8;
+      text-decoration: none;
+    }
+
+    .port-section { padding: 24px 28px; border-top: 1px solid rgba(255,255,255,0.05); }
+    .port-section-title {
+      font-family: var(--font-head);
+      font-size: 11px; font-weight: 700;
+      text-transform: uppercase; letter-spacing: 0.12em;
+      color: var(--teal); margin-bottom: 14px;
+    }
+
+    /* Skills chips in preview. These are generated from state.skills. */
+    .port-skills { display: flex; flex-wrap: wrap; gap: 6px; }
+    .port-skill-chip {
+      padding: 4px 12px;
+      background: rgba(45,212,191,0.08);
+      border: 1px solid rgba(45,212,191,0.15);
+      border-radius: 999px;
+      font-size: 11px; font-weight: 600; color: var(--teal);
+    }
+
+    /* Project cards in preview. Hover border gives the compact preview a small
+       interactive feel even though it is mainly informational. */
+    .port-project {
+      background: rgba(15,23,42,0.6);
+      border: 1px solid rgba(255,255,255,0.06);
+      border-radius: 10px; padding: 14px; margin-bottom: 10px;
+      transition: var(--transition);
+    }
+    .port-project:hover { border-color: rgba(45,212,191,0.2); }
+    .port-project-name {
+      font-family: var(--font-head);
+      font-size: 14px; font-weight: 700;
+      color: #e2e8f0; margin-bottom: 4px;
+    }
+    .port-project-desc { font-size: 12px; color: #5a7a9a; font-weight: 300; line-height: 1.5; }
+    .port-project-tags { display: flex; gap: 5px; flex-wrap: wrap; margin-top: 8px; }
+    .port-project-tag {
+      font-size: 10px; font-weight: 600;
+      padding: 2px 8px; border-radius: 999px;
+      background: rgba(99,102,241,0.1);
+      border: 1px solid rgba(99,102,241,0.2);
+      color: #a5b4fc;
+    }
+
+    /* Experience in preview. The left border mimics a timeline in a compact
+       amount of space. */
+    .port-exp {
+      border-left: 2px solid rgba(45,212,191,0.2);
+      padding-left: 14px; margin-bottom: 14px;
+    }
+    .port-exp-role { font-size: 13px; font-weight: 700; color: #e2e8f0; }
+    .port-exp-company { font-size: 12px; color: var(--teal); margin-bottom: 3px; }
+    .port-exp-period { font-size: 11px; color: #5a7a9a; margin-bottom: 6px; }
+    .port-exp-desc { font-size: 12px; color: #5a7a9a; line-height: 1.5; font-weight: 300; }
+
+    /* Color accent line in preview. This gives the selected theme an immediate
+       visible signal at the top of the mini portfolio. */
+    .port-accent-bar {
+      height: 3px;
+      background: linear-gradient(90deg, var(--teal), transparent);
+      margin-bottom: 0;
+    }
+
+    /* Theme accent variants:
+       builder.js adds .port-theme-blue/.port-theme-violet/etc. to the rendered
+       preview. These modifiers recolor the most important accent elements. */
+    .port-theme-blue   .port-accent-bar { background: linear-gradient(90deg, #3b82f6, transparent); }
+    .port-theme-blue   .port-section-title { color: #60a5fa; }
+    .port-theme-blue   .port-title         { color: #60a5fa; }
+    .port-theme-blue   .port-skill-chip    { background: rgba(59,130,246,0.08); border-color: rgba(59,130,246,0.2); color: #60a5fa; }
+
+    .port-theme-violet .port-accent-bar { background: linear-gradient(90deg, #8b5cf6, transparent); }
+    .port-theme-violet .port-section-title { color: #a78bfa; }
+    .port-theme-violet .port-title         { color: #a78bfa; }
+    .port-theme-violet .port-skill-chip    { background: rgba(139,92,246,0.08); border-color: rgba(139,92,246,0.2); color: #a78bfa; }
+
+    .port-theme-rose   .port-accent-bar { background: linear-gradient(90deg, #f43f5e, transparent); }
+    .port-theme-rose   .port-section-title { color: #fb7185; }
+    .port-theme-rose   .port-title         { color: #fb7185; }
+    .port-theme-rose   .port-skill-chip    { background: rgba(244,63,94,0.08); border-color: rgba(244,63,94,0.2); color: #fb7185; }
+
+    .port-theme-amber  .port-accent-bar { background: linear-gradient(90deg, #f59e0b, transparent); }
+    .port-theme-amber  .port-section-title { color: #fbbf24; }
+    .port-theme-amber  .port-title         { color: #fbbf24; }
+    .port-theme-amber  .port-skill-chip    { background: rgba(245,158,11,0.08); border-color: rgba(245,158,11,0.2); color: #fbbf24; }
+
+    /* Empty state appears before the user has filled enough information for a
+       useful preview. */
+    .preview-empty {
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      min-height: 220px; text-align: center;
+      color: var(--text-subtle);
+      padding: 32px;
+    }
+    .preview-empty .material-symbols-outlined { font-size: 40px; margin-bottom: 8px; opacity: 0.3; }
+    .preview-empty p { font-size: 13px; font-weight: 300; }
+
+    /* ============================================================
+       BOTTOM BAR
+
+       The footer stays attached to the bottom of the builder area. It uses the
+       same left margin as the main area so it does not slide under the sidebar.
+    ============================================================ */
+    .builder-footer {
+      height: 60px;
+      margin-left: var(--sidebar-w);
+      border-top: 1px solid var(--border);
+      background: rgba(2,8,23,0.7);
+      backdrop-filter: blur(16px);
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 0 24px;
+      /* sticky keeps the footer visible near the bottom without removing it
+         from normal document flow. */
+      position: sticky; bottom: 0; z-index: 50;
+    }
+    .footer-meta { font-size: 12px; color: var(--text-muted); }
+    .footer-links { display: flex; gap: 20px; }
+    .footer-links a { font-size: 12px; color: var(--text-subtle); text-decoration: none; transition: color 0.2s; }
+    .footer-links a:hover { color: var(--teal); }
+
+    /* ============================================================
+       FINISH STEP — CELEBRATE
+
+       These styles support the final review screen. builder.js fills the
+       summary card, launches confetti, and wires the preview/download buttons.
+    ============================================================ */
+    .finish-step {
+      text-align: center; padding: 20px 0 28px;
+    }
+    .finish-icon {
+      width: 80px; height: 80px; border-radius: 50%;
+      background: linear-gradient(135deg, rgba(52,211,153,0.15), rgba(45,212,191,0.1));
+      border: 2px solid rgba(52,211,153,0.3);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 36px; margin: 0 auto 20px;
+      /* The spring-like cubic-bezier makes the success icon pop in with a
+         celebratory bounce. */
+      animation: finishPop 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+    @keyframes finishPop {
+      from { transform: scale(0.4); opacity: 0; }
+      to   { transform: scale(1);   opacity: 1; }
+    }
+    .finish-title {
+      font-family: var(--font-head);
+      font-size: 28px; font-weight: 800;
+      letter-spacing: 0; margin-bottom: 8px;
+    }
+    .finish-sub { font-size: 14px; color: var(--text-muted); margin-bottom: 28px; font-weight: 300; }
+    .finish-actions { display: flex; flex-direction: column; gap: 10px; }
+    .finish-btn {
+      display: flex; align-items: center; justify-content: center; gap: 8px;
+      padding: 13px 24px; border-radius: 999px;
+      font-size: 14px; font-weight: 700;
+      cursor: pointer; transition: var(--transition);
+      text-decoration: none;
+    }
+    .finish-btn-primary {
+      background: linear-gradient(135deg, var(--teal), #0ea5e9);
+      border: none; color: var(--on-primary);
+    }
+    .finish-btn-primary:hover { box-shadow: 0 0 24px rgba(45,212,191,0.4); transform: translateY(-2px); }
+    .finish-btn-secondary {
+      background: transparent;
+      border: 1px solid var(--border);
+      color: var(--text-muted);
+    }
+    .finish-btn-secondary:hover { border-color: var(--border-glow); color: var(--text); }
+
+    /* Summary card:
+       builder.js injects rows here so the user can quickly confirm the saved
+       name, title, skills, projects, theme, and score. */
+    .summary-card {
+      background: var(--bg-glass);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      padding: 16px 20px;
+      text-align: left; margin-bottom: 20px;
+    }
+    .summary-row {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,0.04);
+      font-size: 13px;
+    }
+    .summary-row:last-child { border-bottom: none; }
+    .summary-key { color: var(--text-muted); font-weight: 500; }
+    .summary-val { color: var(--text); font-weight: 600; }
+    .summary-val.teal { color: var(--teal); }
+
+    /* Confetti container:
+       It sits above everything but ignores pointer events, so celebration never
+       blocks buttons or links. */
+    #confetti-canvas {
+      position: fixed; inset: 0;
+      pointer-events: none; z-index: 1000;
+    }
+
+    /* ============================================================
+       RESPONSIVE
+
+       At narrower widths the builder prioritizes editing over live preview.
+       The preview panel hides below 1100px because two side-by-side panels
+       become cramped; users can still open the full preview page.
+    ============================================================ */
+    @media (max-width: 1100px) {
+      .builder-split { grid-template-columns: 1fr; }
+      .preview-panel { display: none; }
+    }
+    @media (max-width: 767px) {
+      /* On phones the fixed sidebar is removed and the form becomes full width
+         so inputs remain comfortable to tap and read. */
+      :root { --sidebar-w: 0px; }
+      .sidebar { display: none; }
+      .builder-main { margin-left: 0; }
+      .builder-footer { margin-left: 0; position: static; }
+      .form-panel { padding: 24px 20px 32px; max-height: none; }
+      .field-row { grid-template-columns: 1fr; }
+    }
+
+/* Extracted former inline style utilities */
+.u-builder-1 { width:20%; }
+.u-builder-2 { font-size:28px;color:var(--text-subtle); }
+.u-builder-3 { font-size:16px; }
+.u-builder-4 { font-size:13px; }
+.u-builder-5 { font-size:18px; }
+.u-builder-6 { font-size:15px; }
+
+[data-theme="light"] {
+  --bg: #f7fafc;
+  --bg-mid: #eaf1f7;
+  --bg-card: rgba(255,255,255,0.92);
+  --bg-glass: rgba(255,255,255,0.78);
+  --bg-input: rgba(255,255,255,0.9);
+  --border: rgba(15,23,42,0.12);
+  --border-focus: rgba(15,118,110,0.5);
+  --border-glow: rgba(15,118,110,0.28);
+  --teal: #0f766e;
+  --teal-dim: rgba(15,118,110,0.11);
+  --teal-mid: rgba(15,118,110,0.2);
+  --on-primary: #ffffff;
+  --text: #0f172a;
+  --text-muted: #475569;
+  --text-subtle: #64748b;
+  --success: #047857;
+}
+[data-theme="light"] body {
+  background:
+    radial-gradient(circle at 10% -8%, rgba(15,118,110,0.1), transparent 30%),
+    radial-gradient(circle at 100% 0%, rgba(37,99,235,0.08), transparent 28%),
+    var(--bg);
+}
+[data-theme="light"] .sidebar {
+  background: rgba(255,255,255,0.84);
+  box-shadow: 10px 0 30px rgba(15,23,42,0.07);
+}
+[data-theme="light"] .step-nav-item:hover:not(.active),
+[data-theme="light"] .preview-device-btn.active,
+[data-theme="light"] .preview-device-btn:hover {
+  background: rgba(15,118,110,0.08);
+}
+[data-theme="light"] .step-nav-item.active .step-bubble {
+  color: #ffffff;
+}
+[data-theme="light"] .progress-track {
+  background: rgba(15,23,42,0.09);
+}
+[data-theme="light"] .preview-panel {
+  background: rgba(226,232,240,0.55);
+}
+[data-theme="light"] .preview-browser {
+  background: rgba(255,255,255,0.92);
+  box-shadow: 0 18px 40px rgba(15,23,42,0.1);
+}
+[data-theme="light"] .browser-chrome {
+  background: rgba(248,250,252,0.96);
+}
+[data-theme="light"] .chrome-url {
+  background: rgba(15,23,42,0.05);
+}
+[data-theme="light"] .portfolio-render,
+[data-theme="light"] .port-hero {
+  background: linear-gradient(135deg, #f8fafc 0%, #eaf1f7 100%);
+  color: var(--text);
+}
+[data-theme="light"] .port-name,
+[data-theme="light"] .port-project-name,
+[data-theme="light"] .summary-val {
+  color: var(--text);
+}
+[data-theme="light"] .port-bio,
+[data-theme="light"] .port-social-chip,
+[data-theme="light"] .port-project-desc,
+[data-theme="light"] .port-footer-copy {
+  color: var(--text-muted);
+}
+[data-theme="light"] .port-social-chip,
+[data-theme="light"] .port-project {
+  background: rgba(255,255,255,0.82);
+  border-color: rgba(15,23,42,0.1);
+}
+[data-theme="light"] .port-section,
+[data-theme="light"] .port-footer {
+  border-color: rgba(15,23,42,0.1);
+}
+[data-theme="light"] .port-footer {
+  background: rgba(255,255,255,0.82);
+}
+[data-theme="light"] .finish-btn-primary,
+[data-theme="light"] .btn-next,
+[data-theme="light"] .step-nav-item.active .step-bubble {
+  color: #ffffff;
+}
+[data-theme="light"] .field-input,
+[data-theme="light"] .field-textarea,
+[data-theme="light"] .field-select {
+  background: rgba(255,255,255,0.95);
+  color: #0f172a;
+  -webkit-text-fill-color: #0f172a;
+  text-shadow: none;
+}
+[data-theme="light"] .field-input:focus,
+[data-theme="light"] .field-textarea:focus,
+[data-theme="light"] .field-select:focus {
+  background: #ffffff;
+}

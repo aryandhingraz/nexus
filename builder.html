@@ -1,0 +1,555 @@
+<!DOCTYPE html>
+<!--
+  builder.html is the portfolio creation form. The HTML provides the fields,
+  step panels, buttons, and preview containers. JS/builder.js controls the
+  behavior: validation, step changes, saving to localStorage, live preview,
+  avatar upload, skill chips, project cards, download, and confetti.
+-->
+<html lang="en" data-theme="dark">
+<head>
+  <!-- UTF-8 keeps text, symbols, and icon characters consistent. -->
+  <meta charset="UTF-8" />
+  <!-- Required for responsive layout: mobile devices use their real viewport
+       width instead of rendering the page like a wide desktop. -->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>NEXUS Builder — Build Your Portfolio</title>
+  <!-- preconnect improves Google Font loading by opening the connection early. -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <!-- Google Fonts provides the heading font, body font, and Material Symbols
+       icon font used by the builder buttons and labels. -->
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,300&family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet" />
+  <!-- Bootstrap is available for shared project compatibility, while the main
+       builder layout is styled by custom CSS below. -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" />
+
+  <!-- main.css contains shared nav/theme styles. builder.css contains the
+       builder-specific form, sidebar, preview, and animation styling. -->
+  <link rel="stylesheet" href="css/main.css" />
+  <link rel="stylesheet" href="css/builder.css" />
+</head>
+<body class="builder-page">
+
+  <!-- Confetti canvas:
+       builder.js draws celebratory rectangles here when the user reaches the
+       finish step. It is empty until the animation runs. -->
+  <canvas id="confetti-canvas"></canvas>
+
+  <!-- Ambient blobs are decorative CSS glow layers behind the UI. -->
+  <div class="ambient ambient-1"></div>
+  <div class="ambient ambient-2"></div>
+
+  <!-- Particles canvas:
+       builder.js uses the Canvas API to draw the floating particle background. -->
+  <canvas id="particles-canvas"></canvas>
+
+  <!-- ================================================================
+       NAVIGATION
+  ================================================================ -->
+  <!-- Shared navigation:
+       main.js uses #navbar, #themeToggle, #hamburger, and #mobileMenu for
+       scroll styling, theme switching, and mobile navigation behavior. -->
+  <nav class="navbar-main" id="navbar" aria-label="Primary navigation">
+    <div class="nav-inner">
+      <a class="nav-logo" href="index.html" aria-label="NEXUS home">
+        <div class="nav-logo-icon">
+          <span class="material-symbols-outlined nav-logo-symbol">hub</span>
+        </div>
+        <span class="nav-logo-text">NEXUS</span>
+      </a>
+
+      <ul class="nav-links">
+        <li><a href="index.html">Home</a></li>
+        <li><a href="templates.html">Templates</a></li>
+        <li><a href="builder.html" class="active">Builder</a></li>
+        <li><a href="preview.html">Preview</a></li>
+        <li><a href="contact.html">Contact</a></li>
+      </ul>
+
+      <div class="nav-actions-home">
+        <!-- This button is controlled by main.js. It changes data-theme so CSS
+             variables can switch the page between dark and light styling. -->
+        <button class="theme-toggle" id="themeToggle" type="button" title="Toggle theme" aria-label="Toggle theme">
+          <span class="material-symbols-outlined icon-18" id="themeIcon">dark_mode</span>
+        </button>
+        <a href="builder.html" class="nav-cta">Launch App</a>
+        <!-- aria-expanded lets assistive technology know whether the mobile
+             menu is currently open. main.js updates this value. -->
+        <button class="hamburger" id="hamburger" type="button" aria-label="Open navigation" aria-expanded="false">
+          <span class="material-symbols-outlined icon-20">menu</span>
+        </button>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Mobile menu duplicates the main links in a vertical touch-friendly list.
+       It is shown/hidden by the hamburger button. -->
+  <div class="mobile-menu" id="mobileMenu">
+    <a href="index.html">Home</a>
+    <a href="templates.html">Templates</a>
+    <a href="builder.html" class="active">Builder</a>
+    <a href="preview.html">Preview</a>
+    <a href="contact.html">Contact</a>
+    <a href="builder.html" class="mobile-launch">Launch App</a>
+  </div>
+
+  <!-- ================================================================
+       BUILDER LAYOUT
+  ================================================================ -->
+  <!-- Builder layout:
+       The page is split into a step sidebar, a form panel, and a live preview.
+       builder.js keeps all three areas synchronized. -->
+  <div class="builder-layout">
+
+    <!-- ============================================================
+         SIDEBAR
+    ============================================================ -->
+    <!-- Sidebar:
+         Each .step-nav-item has data-step so builder.js can know which panel
+         the user wants to open. The progress bar is also updated from JS. -->
+    <aside class="sidebar">
+      <div class="sidebar-head">
+        <div class="sidebar-head-label">Builder Steps</div>
+        <div class="sidebar-head-title">Your Portfolio</div>
+        <!-- #saveDraftBtn stores the current builder state in localStorage.
+             This lets the user refresh or open preview.html without losing data. -->
+        <button class="sidebar-save-btn" id="saveDraftBtn" type="button"><span class="material-symbols-outlined icon-14">save</span>Save Draft</button>
+      </div>
+
+      <nav>
+        <!-- data-step is the JavaScript hook. The visible number is for users;
+             the data attribute is for builder.js logic. -->
+        <div class="step-nav-item active" data-step="1" id="nav-step-1">
+          <div class="step-bubble">01</div>
+          <div class="step-nav-text">
+            <div class="step-nav-name">Basic Info</div>
+            <div class="step-nav-desc">Name, bio &amp; avatar</div>
+          </div>
+        </div>
+        <div class="step-connector"></div>
+
+        <div class="step-nav-item" data-step="2" id="nav-step-2">
+          <div class="step-bubble">02</div>
+          <div class="step-nav-text">
+            <div class="step-nav-name">Experience</div>
+            <div class="step-nav-desc">Work history &amp; links</div>
+          </div>
+        </div>
+        <div class="step-connector"></div>
+
+        <div class="step-nav-item" data-step="3" id="nav-step-3">
+          <div class="step-bubble">03</div>
+          <div class="step-nav-text">
+            <div class="step-nav-name">Projects</div>
+            <div class="step-nav-desc">Showcase your work</div>
+          </div>
+        </div>
+        <div class="step-connector"></div>
+
+        <div class="step-nav-item" data-step="4" id="nav-step-4">
+          <div class="step-bubble">04</div>
+          <div class="step-nav-text">
+            <div class="step-nav-name">Skills &amp; Style</div>
+            <div class="step-nav-desc">Tech stack &amp; theme</div>
+          </div>
+        </div>
+        <div class="step-connector"></div>
+
+        <div class="step-nav-item" data-step="5" id="nav-step-5">
+          <div class="step-bubble">05</div>
+          <div class="step-nav-text">
+            <div class="step-nav-name">Finish</div>
+            <div class="step-nav-desc">Review &amp; go live</div>
+          </div>
+        </div>
+      </nav>
+
+      <div class="sidebar-progress">
+        <div class="progress-label">
+          <span>Progress</span>
+          <span id="progressPct">20%</span>
+        </div>
+        <div class="progress-track">
+          <div class="progress-fill u-builder-1" id="progressFill"></div>
+        </div>
+      </div>
+    </aside>
+
+    <!-- ============================================================
+         MAIN
+    ============================================================ -->
+    <div class="builder-main">
+      <div class="builder-split">
+
+        <!-- ========================================================
+             FORM PANEL
+        ======================================================== -->
+        <div class="form-panel">
+
+          <!-- STEP 1: Basic Info
+               This panel collects the required identity fields. builder.js
+               validates fullName, jobTitle, and bio before moving forward. -->
+          <div class="step-panel active" id="step-1">
+            <div class="step-header">
+              <div class="step-step-label">Step 1 of 4</div>
+              <div class="step-title">Basic Info</div>
+              <div class="step-subtitle">Let's start with who you are. This is the first thing visitors see.</div>
+            </div>
+
+            <!-- Avatar upload:
+                 #avatarPreview is clickable. builder.js forwards that click to
+                 the hidden #avatarInput file picker, then reads the selected
+                 image with the FileReader API. -->
+            <div class="field-group">
+              <label class="field-label">Profile Photo</label>
+              <div class="avatar-upload-area">
+                <div class="avatar-preview" id="avatarPreview">
+                  <span class="material-symbols-outlined placeholder u-builder-2">person</span>
+                  <img id="avatarImg" src="" alt="Avatar" />
+                </div>
+                <!-- accept="image/*" tells the browser to offer image files
+                     first. builder.js still controls how the selected file is
+                     displayed and saved. -->
+                <input type="file" id="avatarInput" accept="image/*" />
+                <div class="avatar-upload-meta">
+                  <h4>Upload your photo</h4>
+                  <p>JPG, PNG or WebP. Max 2MB.<br />Displays on your portfolio hero section.</p>
+                </div>
+              </div>
+            </div>
+
+            <div class="field-row">
+              <div class="field-group">
+                <label class="field-label" for="fullName">Full Name <span class="req">*</span></label>
+                <!-- The id must match builder.js liveFields and validation code. -->
+                <input class="field-input" type="text" id="fullName" placeholder="e.g. Alex Sterling" />
+                <div class="field-error" id="fullNameErr">Please enter your name.</div>
+              </div>
+              <div class="field-group">
+                <label class="field-label" for="jobTitle">Job Title <span class="req">*</span></label>
+                <input class="field-input" type="text" id="jobTitle" placeholder="e.g. Full-Stack Developer" />
+                <div class="field-error" id="jobTitleErr">Please enter a job title.</div>
+              </div>
+            </div>
+
+            <div class="field-group">
+              <label class="field-label" for="bio">Professional Bio <span class="req">*</span></label>
+              <textarea class="field-textarea" id="bio" placeholder="Tell your story in 2–3 sentences. What makes you unique? What problems do you love solving?" rows="5" data-word-limit="500" data-line-limit="25" data-word-count="bioCount" data-line-count="bioLineCount"></textarea>
+              <div class="field-count"><span id="bioCount">0</span> / 500 words · <span id="bioLineCount">1</span> / 25 lines</div>
+              <div class="field-error" id="bioErr">Please write a short bio.</div>
+            </div>
+
+            <div class="field-row">
+              <div class="field-group">
+                <label class="field-label" for="location">Location</label>
+                <input class="field-input" type="text" id="location" placeholder="e.g. New Delhi, India" />
+              </div>
+              <div class="field-group">
+                <label class="field-label" for="email">Email</label>
+                <input class="field-input" type="email" id="email" placeholder="hello@yourname.dev" />
+              </div>
+            </div>
+
+            <div class="form-nav">
+              <button class="btn-back" disabled>
+                <span class="material-symbols-outlined u-builder-3">arrow_back</span>
+                Back
+              </button>
+              <!-- data-action keeps buttons declarative. builder.js attaches one
+                   listener pattern to all next/back/finish buttons. -->
+              <button class="btn-next" data-action="next-step">
+                Next Step
+                <span class="material-symbols-outlined u-builder-3">arrow_forward</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- STEP 2: Experience
+               These fields are optional for navigation, but they make the
+               generated portfolio more credible and complete. -->
+          <div class="step-panel" id="step-2">
+            <div class="step-header">
+              <div class="step-step-label">Step 2 of 4</div>
+              <div class="step-title">Experience</div>
+              <div class="step-subtitle">Add your work experience and social profiles to build credibility.</div>
+            </div>
+
+            <div class="field-group">
+              <label class="field-label" for="expRole">Most Recent Role <span class="req">*</span></label>
+              <input class="field-input" type="text" id="expRole" placeholder="e.g. Senior Frontend Engineer" />
+            </div>
+
+            <div class="field-row">
+              <div class="field-group">
+                <label class="field-label" for="expCompany">Company</label>
+                <input class="field-input" type="text" id="expCompany" placeholder="e.g. Acme Corp" />
+              </div>
+              <div class="field-group">
+                <label class="field-label" for="expPeriod">Period</label>
+                <input class="field-input" type="text" id="expPeriod" placeholder="e.g. 2022 – Present" />
+              </div>
+            </div>
+
+            <div class="field-group">
+              <label class="field-label" for="expDesc">Role Description</label>
+              <textarea class="field-textarea" id="expDesc" placeholder="What did you build or achieve here? Keep it impact-focused." rows="4" data-word-limit="500" data-line-limit="25" data-word-count="expDescCount" data-line-count="expDescLineCount"></textarea>
+              <div class="field-count"><span id="expDescCount">0</span> / 500 words · <span id="expDescLineCount">1</span> / 25 lines</div>
+            </div>
+
+            <div class="section-divider"></div>
+            <div class="step-step-label social-step-label">Social &amp; Links</div>
+
+            <div class="field-row">
+              <div class="field-group">
+                <label class="field-label" for="github">
+                  <span class="material-symbols-outlined u-builder-4">code</span> GitHub
+                </label>
+                <input class="field-input" type="url" id="github" placeholder="github.com/username" />
+              </div>
+              <div class="field-group">
+                <label class="field-label" for="linkedin">
+                  <span class="material-symbols-outlined u-builder-4">work</span> LinkedIn
+                </label>
+                <input class="field-input" type="url" id="linkedin" placeholder="linkedin.com/in/username" />
+              </div>
+            </div>
+
+            <div class="field-row">
+              <div class="field-group">
+                <label class="field-label" for="twitter">
+                  <span class="material-symbols-outlined u-builder-4">tag</span> Twitter / X
+                </label>
+                <input class="field-input" type="url" id="twitter" placeholder="twitter.com/username" />
+              </div>
+              <div class="field-group">
+                <label class="field-label" for="website">
+                  <span class="material-symbols-outlined u-builder-4">language</span> Website
+                </label>
+                <input class="field-input" type="url" id="website" placeholder="https://yoursite.com" />
+              </div>
+            </div>
+
+            <div class="form-nav">
+              <button class="btn-back" data-action="prev-step">
+                <span class="material-symbols-outlined u-builder-3">arrow_back</span>
+                Back
+              </button>
+              <button class="btn-next" data-action="next-step">
+                Next Step
+                <span class="material-symbols-outlined u-builder-3">arrow_forward</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- STEP 3: Projects
+               #projectsList starts empty because project cards are dynamic.
+               builder.js creates cards with data-project-id/data-project-key
+               so each input updates the correct project object. -->
+          <div class="step-panel" id="step-3">
+            <div class="step-header">
+              <div class="step-step-label">Step 3 of 4</div>
+              <div class="step-title">Projects</div>
+              <div class="step-subtitle">Showcase your best work. Add up to 6 projects — quality over quantity.</div>
+            </div>
+
+            <div id="projectsList"></div>
+
+            <button class="add-project-btn" id="addProjectBtn">
+              <span class="material-symbols-outlined u-builder-5">add_circle</span>
+              Add Project
+            </button>
+            <div class="field-hint project-hint">💡 Tip: Add your top 2–3 projects. Link to GitHub or live demo for best results.</div>
+
+            <div class="form-nav">
+              <button class="btn-back" data-action="prev-step">
+                <span class="material-symbols-outlined u-builder-3">arrow_back</span>
+                Back
+              </button>
+              <button class="btn-next" data-action="next-step">
+                Next Step
+                <span class="material-symbols-outlined u-builder-3">arrow_forward</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- STEP 4: Skills & Style
+               Skills become removable chips. Theme and availability affect both
+               the live builder preview and the full preview page. -->
+          <div class="step-panel" id="step-4">
+            <div class="step-header">
+              <div class="step-step-label">Step 4 of 4</div>
+              <div class="step-title">Skills &amp; Style</div>
+              <div class="step-subtitle">Define your tech stack and choose a color accent for your portfolio.</div>
+            </div>
+
+            <div class="field-group">
+              <label class="field-label">Skills &amp; Technologies</label>
+              <!-- #tagsContainer is both a visual chip area and a JS event
+                   delegation target for adding/removing skill chips. -->
+              <div class="tags-container" id="tagsContainer">
+                <input class="tags-input" id="tagsInput" placeholder="Type a skill and press Enter…" />
+              </div>
+              <div class="field-hint">Press <strong>Enter</strong> or <strong>,</strong> to add. Click × to remove.</div>
+            </div>
+
+            <!-- Quick-add popular skills:
+                 data-skill holds the value that builder.js adds to state.skills. -->
+            <div class="quick-add-row">
+              <span class="quick-add-label">Quick add:</span>
+              <button class="tag-chip quick-add-chip" data-skill="JavaScript">JavaScript</button>
+              <button class="tag-chip quick-add-chip" data-skill="React">React</button>
+              <button class="tag-chip quick-add-chip" data-skill="Node.js">Node.js</button>
+              <button class="tag-chip quick-add-chip" data-skill="Python">Python</button>
+              <button class="tag-chip quick-add-chip" data-skill="TypeScript">TypeScript</button>
+              <button class="tag-chip quick-add-chip" data-skill="Next.js">Next.js</button>
+              <button class="tag-chip quick-add-chip" data-skill="Tailwind CSS">Tailwind CSS</button>
+              <button class="tag-chip quick-add-chip" data-skill="AWS">AWS</button>
+            </div>
+
+            <div class="field-group">
+              <label class="field-label">Theme Accent Color</label>
+              <!-- #colorPicker uses event delegation. Each swatch stores its
+                   theme name in data-color, which builder.js saves in state. -->
+              <div class="color-picker-row" id="colorPicker">
+                <div class="color-swatch selected swatch-teal" data-color="teal" title="Teal"></div>
+                <div class="color-swatch swatch-blue" data-color="blue" title="Blue"></div>
+                <div class="color-swatch swatch-violet" data-color="violet" title="Violet"></div>
+                <div class="color-swatch swatch-rose" data-color="rose" title="Rose"></div>
+                <div class="color-swatch swatch-amber" data-color="amber" title="Amber"></div>
+                <div class="color-swatch swatch-emerald" data-color="emerald" title="Emerald"></div>
+              </div>
+            </div>
+
+            <div class="field-group">
+              <label class="field-label" for="tagline">Tagline / Headline <span class="req">*</span></label>
+              <input class="field-input" type="text" id="tagline" placeholder="e.g. Crafting Digital Architectures &amp; Fluid Experiences" />
+              <div class="field-hint">This shows as the main headline on your portfolio page.</div>
+            </div>
+
+            <div class="field-group">
+              <label class="field-label" for="availability">Availability Status</label>
+              <select class="field-select field-input" id="availability">
+                <option value="open">✅ Available for opportunities</option>
+                <option value="freelance">💼 Open to freelance</option>
+                <option value="busy">🔴 Currently not available</option>
+                <option value="looking">👀 Actively looking</option>
+              </select>
+            </div>
+
+            <div class="form-nav">
+              <button class="btn-back" data-action="prev-step">
+                <span class="material-symbols-outlined u-builder-3">arrow_back</span>
+                Back
+              </button>
+              <button class="btn-next btn-finish" data-action="finish-step">
+                <span class="material-symbols-outlined u-builder-3">check_circle</span>
+                Finish &amp; Generate
+              </button>
+            </div>
+          </div>
+
+          <!-- STEP 5: Finish
+               This panel is filled after the form flow. It summarizes the
+               saved data and offers preview/download/template actions. -->
+          <div class="step-panel" id="step-5">
+            <div class="finish-step">
+              <div class="finish-icon">🎉</div>
+              <div class="finish-title">Your Portfolio is Ready!</div>
+              <div class="finish-sub">Here's a summary of what we built. Time to go live.</div>
+
+              <!-- Empty on purpose. builder.js builds the summary HTML based on
+                   current state and inserts it here. -->
+              <div class="summary-card" id="summaryCard">
+                <!-- filled by JS -->
+              </div>
+
+              <div class="finish-actions">
+                <!-- builder.js saves the latest state before this link opens
+                     preview.html, so the full preview shows current details. -->
+                <a href="preview.html" class="finish-btn finish-btn-primary">
+                  <span class="material-symbols-outlined u-builder-5">open_in_new</span>
+                  View Full Preview
+                </a>
+                <button class="finish-btn finish-btn-secondary" data-action="download-portfolio">
+                  <span class="material-symbols-outlined u-builder-5">download</span>
+                  Download HTML File
+                </button>
+                <a href="templates.html" class="finish-btn finish-btn-secondary">
+                  <span class="material-symbols-outlined u-builder-5">refresh</span>
+                  Change Template
+                </a>
+              </div>
+            </div>
+          </div>
+
+        </div><!-- /form-panel -->
+
+        <!-- ========================================================
+             PREVIEW PANEL
+        ======================================================== -->
+        <!-- Live preview panel:
+             builder.js rewrites #portfolioRender whenever the user types,
+             changes theme, adds skills, uploads an avatar, or edits projects. -->
+        <div class="preview-panel">
+          <div class="preview-topbar">
+            <div class="preview-label">
+              <div class="preview-live-dot"></div>
+              Live Preview
+            </div>
+            <div class="preview-device-btns">
+              <!-- These buttons do not resize the browser. They toggle CSS
+                   classes on #previewBrowser to imitate desktop/mobile preview
+                   proportions inside the builder. -->
+              <button class="preview-device-btn active" title="Desktop" id="devDesktop">
+                <span class="material-symbols-outlined u-builder-6">desktop_windows</span>
+              </button>
+              <button class="preview-device-btn" title="Mobile" id="devMobile">
+                <span class="material-symbols-outlined u-builder-6">smartphone</span>
+              </button>
+            </div>
+          </div>
+
+          <div class="preview-browser" id="previewBrowser">
+            <div class="browser-chrome">
+              <div class="chrome-dots"><span></span><span></span><span></span></div>
+              <!-- Visual-only portfolio URL. builder.js turns the user's name
+                   into a slug and places it here. -->
+              <div class="chrome-url" id="chromeUrl">your-portfolio.nexus.dev</div>
+            </div>
+            <div class="preview-content" id="previewContent">
+              <!-- Empty on purpose. builder.js generates the compact live
+                   preview HTML and injects it here. -->
+              <div class="portfolio-render" id="portfolioRender">
+                <!-- Filled by JS live -->
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div><!-- /builder-split -->
+    </div><!-- /builder-main -->
+  </div><!-- /builder-layout -->
+
+  <!-- ================================================================
+       FOOTER
+  ================================================================ -->
+  <div class="builder-footer">
+    <div class="footer-meta">© 2026 NEXUS</div>
+    <div class="footer-links">
+      <a href="#">Terms</a>
+      <a href="#">Privacy</a>
+      <a href="contact.html">Support</a>
+    </div>
+  </div>
+
+  <!-- Bootstrap's JS bundle is kept for project-wide compatibility. -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
+  <!-- main.js handles shared navigation/theme behavior across pages. -->
+  <script src="js/main.js"></script>
+
+  <!-- builder.js controls this page's form steps, validation, localStorage
+       draft saving, live preview, dynamic projects/skills, and download. -->
+  <script src="js/builder.js"></script>
+</body>
+</html>

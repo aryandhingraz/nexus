@@ -1,0 +1,504 @@
+<!DOCTYPE html>
+<!--
+  index.html is the landing page of the NEXUS project.
+  HTML gives the page its structure: navigation, hero content, feature cards,
+  steps, template previews, testimonials, call-to-action, and footer.
+-->
+<html lang="en" data-theme="dark">
+<head>
+  <!-- UTF-8 lets the browser understand normal text characters and symbols. -->
+  <meta charset="UTF-8" />
+
+  <!-- viewport makes the layout responsive by matching CSS pixels to device width. -->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>NEXUS — Build Your Portfolio. No Code Needed.</title>
+  <!-- preconnect starts the connection to Google Fonts early for faster loading. -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+
+  <!-- Loads Syne for headings, DM Sans for body text, and Material Symbols icons. -->
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;1,9..40,300&family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet" />
+
+  <!-- Bootstrap gives the page responsive grid classes like row, col-lg-6, and g-5. -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" />
+
+  <!-- main.css contains shared styles used across multiple pages. -->
+  <link rel="stylesheet" href="css/main.css" />
+
+  <!-- index.css contains styles only for this landing page. -->
+  <link rel="stylesheet" href="css/index.css" />
+</head>
+<body class="index-page">
+
+  <!-- ================================================================
+       WEBGL SHADER BACKGROUND
+  ================================================================ -->
+  <!-- JavaScript draws a full-screen WebGL animated shader into this canvas. -->
+  <canvas id="shader-canvas"></canvas>
+
+  <!-- ================================================================
+       PARTICLES CANVAS
+  ================================================================ -->
+  <!-- JavaScript draws floating sparkle particles into this second canvas. -->
+  <canvas id="particles-canvas"></canvas>
+
+  <!-- ================================================================
+       NAVIGATION
+  ================================================================ -->
+  <!-- ================================================================
+       NAVIGATION
+  ================================================================ -->
+  <!-- aria-label tells screen readers this nav is the primary site navigation. -->
+  <nav class="navbar-main" id="navbar" aria-label="Primary navigation">
+    <div class="nav-inner">
+      <!-- Logo link sends the user back to the home page. -->
+      <a class="nav-logo" href="index.html" aria-label="NEXUS home">
+        <div class="nav-logo-icon">
+          <span class="material-symbols-outlined nav-logo-symbol">hub</span>
+        </div>
+        <span class="nav-logo-text">NEXUS</span>
+      </a>
+
+      <!-- Desktop navigation links. The active class marks the current page. -->
+      <ul class="nav-links">
+        <li><a href="index.html" class="active">Home</a></li>
+        <li><a href="templates.html">Templates</a></li>
+        <li><a href="builder.html">Builder</a></li>
+        <li><a href="preview.html">Preview</a></li>
+        <li><a href="contact.html">Contact</a></li>
+      </ul>
+
+      <!-- Right-side actions: theme toggle, launch button, and mobile menu button. -->
+      <div class="nav-actions-home">
+        <!-- id="themeToggle" and id="themeIcon" are used by main.js for dark/light mode. -->
+        <button class="theme-toggle" id="themeToggle" type="button" title="Toggle theme" aria-label="Toggle theme">
+          <span class="material-symbols-outlined icon-18" id="themeIcon">dark_mode</span>
+        </button>
+        <a href="builder.html" class="nav-cta">Launch App</a>
+        <!-- aria-expanded should change when the mobile menu opens/closes. -->
+        <button class="hamburger" id="hamburger" type="button" aria-label="Open navigation" aria-expanded="false">
+          <span class="material-symbols-outlined icon-20">menu</span>
+        </button>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Mobile menu is controlled by JavaScript and shown on smaller screens. -->
+  <div class="mobile-menu" id="mobileMenu">
+    <a href="index.html" class="active">Home</a>
+    <a href="templates.html">Templates</a>
+    <a href="builder.html">Builder</a>
+    <a href="preview.html">Preview</a>
+    <a href="contact.html">Contact</a>
+    <a href="builder.html" class="mobile-launch">Launch App</a>
+  </div>
+
+  <!-- ================================================================
+       HERO
+  ================================================================ -->
+  <!-- id="hero" is the first full-screen marketing section. -->
+  <section id="hero">
+    <div class="container-fluid">
+      <!-- Bootstrap row/column classes create a two-column desktop layout. -->
+      <div class="row align-items-center g-5">
+        <!-- Left Content -->
+        <div class="col-lg-6">
+          <!-- Badge uses a small animated dot from CSS to create a live/AI feel. -->
+          <div class="hero-badge">
+            <span class="dot"></span>
+            <span>AI-Driven Portfolio Design</span>
+          </div>
+
+          <!-- Main H1 headline. The accent span lets CSS color only the final line. -->
+          <h1 class="hero-h1">
+            Build Your<br />
+            Portfolio.<br />
+            <span class="accent">No Code Needed.</span>
+          </h1>
+
+          <p class="hero-sub">
+            The ultimate digital canvas for sophisticated developers and creators.
+            Deploy beautiful, responsive portfolios in minutes — drag, drop, done.
+          </p>
+
+          <!-- Primary and secondary calls to action. -->
+          <div class="hero-actions">
+            <a href="builder.html" class="btn-primary-glow">
+              <span class="material-symbols-outlined u-index-1">rocket_launch</span>
+              <span>Get Started Free</span>
+            </a>
+            <a href="templates.html" class="btn-outline-glass">
+              <span class="material-symbols-outlined u-index-1">grid_view</span>
+              View Templates
+            </a>
+          </div>
+
+          <!-- Stats are animated by index.js when this block enters the viewport. -->
+          <div class="hero-stats">
+            <div class="stat-item">
+              <div class="stat-num"><span class="teal">10k</span>+</div>
+              <div class="stat-label">Portfolios Built</div>
+            </div>
+            <div class="stat-item">
+              <div class="stat-num"><span class="teal">6</span></div>
+              <div class="stat-label">Pro Templates</div>
+            </div>
+            <div class="stat-item">
+              <div class="stat-num"><span class="teal">99</span>%</div>
+              <div class="stat-label">Uptime SLA</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Right: App Preview Card -->
+        <div class="col-lg-6">
+          <!-- Wrapper listens for mouse movement so index.js can tilt the preview card. -->
+          <div class="hero-preview-wrap">
+            <div class="hero-preview glass">
+              <!-- Browser bar -->
+              <div class="preview-browser-bar">
+                <div class="browser-dots">
+                  <span></span><span></span><span></span>
+                </div>
+                <div class="browser-url">
+                  <span class="material-symbols-outlined u-index-2">lock</span>
+                  your-name.nexus.dev
+                </div>
+              </div>
+              <!-- Screen content -->
+              <!-- Fake portfolio/editor preview made from divs so it can animate cheaply. -->
+              <div class="preview-screen">
+                <div class="preview-line"></div>
+                <div class="preview-line"></div>
+                <div class="preview-line"></div>
+                <div class="preview-line sm"></div>
+                <div class="preview-line sm"></div>
+
+                <div class="preview-cards-row">
+                  <div class="preview-mini-card glass">
+                    <div class="pmcard-dot t"></div>
+                    <div class="pmcard-line"></div>
+                    <div class="pmcard-line"></div>
+                  </div>
+                  <div class="preview-mini-card glass">
+                    <div class="pmcard-dot b"></div>
+                    <div class="pmcard-line"></div>
+                    <div class="pmcard-line"></div>
+                  </div>
+                  <div class="preview-mini-card glass">
+                    <div class="pmcard-dot g"></div>
+                    <div class="pmcard-line"></div>
+                    <div class="pmcard-line"></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Floating performance badge -->
+            <!-- Floating badge uses CSS keyframes to gently move up and down. -->
+            <div class="hero-float-badge glass">
+              <div class="badge-icon">
+                <span class="material-symbols-outlined u-index-1">trending_up</span>
+              </div>
+              <div class="badge-text">
+                <div class="top">Live Performance</div>
+                <div class="num"><span>+12.4%</span> Today</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================================================================
+       FEATURES
+  ================================================================ -->
+  <section id="features">
+    <div class="container-fluid">
+      <div class="row justify-content-center mb-5">
+        <!-- reveal class is observed by index.js and fades this heading in on scroll. -->
+        <div class="col-lg-7 text-center reveal">
+          <p class="label-caps section-label">Engineered for Precision</p>
+          <h2 class="section-title">Everything You Need to<br /><span class="gradient-text">Shine Online</span></h2>
+          <p class="section-sub">Every detail crafted to provide an elite experience for showcase and data management.</p>
+        </div>
+      </div>
+
+      <div class="row g-4">
+        <!-- Bootstrap columns make cards 1 per row on small screens, 4 per row on large screens. -->
+        <div class="col-md-6 col-lg-3 reveal delay-1">
+          <!-- glass gives blur/transparency; glass-hover adds the lift/glow hover animation. -->
+          <div class="feature-card glass glass-hover">
+            <div class="feature-icon">
+              <span class="material-symbols-outlined">rocket_launch</span>
+            </div>
+            <div class="feature-title">AI-Powered Layouts</div>
+            <div class="feature-desc">Intelligent algorithms arrange your assets in the most impactful visual hierarchy automatically.</div>
+          </div>
+        </div>
+        <div class="col-md-6 col-lg-3 reveal delay-2">
+          <div class="feature-card glass glass-hover">
+            <div class="feature-icon">
+              <span class="material-symbols-outlined">shield</span>
+            </div>
+            <div class="feature-title">Secure Hosting</div>
+            <div class="feature-desc">Enterprise-grade security and 99.9% uptime guaranteed with our global edge network infrastructure.</div>
+          </div>
+        </div>
+        <div class="col-md-6 col-lg-3 reveal delay-3">
+          <div class="feature-card glass glass-hover">
+            <div class="feature-icon">
+              <span class="material-symbols-outlined">language</span>
+            </div>
+            <div class="feature-title">Custom Domains</div>
+            <div class="feature-desc">Connect your personal brand with custom TLDs and automated SSL certificate management.</div>
+          </div>
+        </div>
+        <div class="col-md-6 col-lg-3 reveal delay-4">
+          <div class="feature-card glass glass-hover">
+            <div class="feature-icon">
+              <span class="material-symbols-outlined">bar_chart</span>
+            </div>
+            <div class="feature-title">Traffic Analytics</div>
+            <div class="feature-desc">Deep insights into visitor behavior and performance with real-time tracking dashboards.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================================================================
+       HOW IT WORKS
+  ================================================================ -->
+  <section id="how">
+    <div class="container-fluid">
+      <div class="row justify-content-center mb-5">
+        <div class="col-lg-7 text-center reveal">
+          <p class="label-caps section-label">Simple Steps</p>
+          <h2 class="section-title">From Zero to <span class="gradient-text">Live Portfolio</span></h2>
+          <p class="section-sub">Three steps to professional excellence. No code. No design experience needed.</p>
+        </div>
+      </div>
+
+      <div class="row justify-content-center">
+        <div class="col-lg-8">
+          <!-- position-relative lets the vertical .steps-line position itself inside this block. -->
+          <div class="position-relative">
+            <div class="steps-line"></div>
+
+            <!-- reveal-left makes each step slide in from the left when it enters the viewport. -->
+            <div class="step-row reveal-left">
+              <div class="step-num glass">01</div>
+              <div class="step-body glass glass-hover">
+                <div class="step-title">Choose Your Template</div>
+                <div class="step-desc">Browse our library of premium, responsive templates designed by industry experts for high-end conversion. Developer, Designer, Executive — we've got you covered.</div>
+              </div>
+            </div>
+
+            <div class="step-row reveal-left delay-1">
+              <div class="step-num glass">02</div>
+              <div class="step-body glass glass-hover">
+                <div class="step-title">Fill Your Details</div>
+                <div class="step-desc">Connect your GitHub to auto-import projects, or upload assets directly. Our smart editor syncs data seamlessly across all components in real-time.</div>
+              </div>
+            </div>
+
+            <div class="step-row reveal-left delay-2">
+              <div class="step-num glass">03</div>
+              <div class="step-body glass glass-hover">
+                <div class="step-title">Go Live Instantly</div>
+                <div class="step-desc">One-click deployment to our global servers. Your portfolio is instantly accessible, lightning fast, and secured with automatic SSL — all for free.</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================================================================
+       TEMPLATES PREVIEW
+  ================================================================ -->
+  <section id="templates">
+    <div class="container-fluid">
+      <div class="row justify-content-between align-items-end mb-5">
+        <!-- Template intro also uses reveal so it animates consistently with other sections. -->
+        <div class="col-lg-5 reveal">
+          <p class="label-caps section-label">Template Gallery</p>
+          <h2 class="section-title">Pick Your <span class="gradient-text">Perfect Base</span></h2>
+          <p class="section-sub">6 hand-crafted templates for every kind of professional.</p>
+        </div>
+        <div class="col-auto reveal">
+          <a href="templates.html" class="btn-outline-glass">
+            View All Templates
+            <span class="material-symbols-outlined u-index-3">arrow_forward</span>
+          </a>
+        </div>
+      </div>
+
+      <div class="row g-4">
+        <!-- Card 1 -->
+        <div class="col-md-6 col-lg-4 reveal delay-1">
+          <!-- Each template card combines an image thumbnail, tag, description, and builder link. -->
+          <div class="template-card glass glass-hover">
+            <div class="template-thumb">
+              <!-- loading="lazy" delays image loading until needed, improving initial page speed. -->
+              <img src="https://images.unsplash.com/photo-1467232004584-a241de8bcf5d?w=600&q=80" alt="Minimalist Pro" loading="lazy" />
+              <div class="template-thumb-overlay"></div>
+            </div>
+            <div class="template-body">
+              <span class="template-tag">Developer</span>
+              <div class="template-name">Minimalist Pro</div>
+              <div class="template-desc">Clean lines and structured layouts for technical professionals.</div>
+              <a href="builder.html" class="btn-use-template">Use Template</a>
+            </div>
+          </div>
+        </div>
+        <!-- Card 2 -->
+        <div class="col-md-6 col-lg-4 reveal delay-2">
+          <div class="template-card glass glass-hover">
+            <div class="template-thumb">
+              <img src="https://images.unsplash.com/photo-1558655146-9f40138edfeb?w=600&q=80" alt="Creative Edge" loading="lazy" />
+              <div class="template-thumb-overlay"></div>
+            </div>
+            <div class="template-body">
+              <span class="template-tag">Designer</span>
+              <div class="template-name">Creative Edge</div>
+              <div class="template-desc">Bold typography and dynamic grids for designers pushing boundaries.</div>
+              <a href="builder.html" class="btn-use-template">Use Template</a>
+            </div>
+          </div>
+        </div>
+        <!-- Card 3 -->
+        <div class="col-md-6 col-lg-4 reveal delay-3">
+          <div class="template-card glass glass-hover">
+            <div class="template-thumb">
+              <img src="https://images.unsplash.com/photo-1497366216548-37526070297c?w=600&q=80" alt="Modern Arch" loading="lazy" />
+              <div class="template-thumb-overlay"></div>
+            </div>
+            <div class="template-body">
+              <span class="template-tag">Executive</span>
+              <div class="template-name">Modern Arch</div>
+              <div class="template-desc">Sophisticated layout for leaders and high-level strategists.</div>
+              <a href="builder.html" class="btn-use-template">Use Template</a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================================================================
+       TESTIMONIALS
+  ================================================================ -->
+  <section id="testimonials">
+    <div class="container-fluid">
+      <div class="row justify-content-center mb-5">
+        <div class="col-lg-7 text-center reveal">
+          <p class="label-caps section-label">Success Stories</p>
+          <h2 class="section-title">Trusted by <span class="gradient-text">10,000+ Professionals</span></h2>
+          <p class="section-sub">Leading developers, designers, and executives worldwide.</p>
+        </div>
+      </div>
+
+      <div class="row g-4">
+        <div class="col-md-4 reveal delay-1">
+          <!-- Testimonial card uses flex styling in CSS so author info stays at the bottom. -->
+          <div class="testimonial-card glass glass-hover">
+            <div class="stars">★★★★★</div>
+            <div class="testimonial-text">"The level of precision in these layouts is unmatched. I went from zero to a professional portfolio in less than an hour. The glassmorphism effects are stunning."</div>
+            <div class="testimonial-author">
+              <div class="author-avatar"><img src="https://i.pravatar.cc/88?img=11" alt="Marcus Chen" /></div>
+              <div>
+                <div class="author-name">Marcus Chen</div>
+                <div class="author-role">Venture Analyst</div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="col-md-4 reveal delay-2">
+          <div class="testimonial-card glass glass-hover">
+            <div class="stars">★★★★★</div>
+            <div class="testimonial-text">"As a non-technical founder, I needed something that looked high-end without needing a dev team. NEXUS delivered exactly that."</div>
+            <div class="testimonial-author">
+              <div class="author-avatar"><img src="https://i.pravatar.cc/88?img=5" alt="Sarah J. Miller" /></div>
+              <div>
+                <div class="author-name">Sarah J. Miller</div>
+                <div class="author-role">Tech Entrepreneur</div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="col-md-4 reveal delay-3">
+          <div class="testimonial-card glass glass-hover">
+            <div class="stars">★★★★★</div>
+            <div class="testimonial-text">"The analytics integration is the best I've seen in any no-code tool. Being able to see exactly which sections investors are spending time on is a game changer."</div>
+            <div class="testimonial-author">
+              <div class="author-avatar"><img src="https://i.pravatar.cc/88?img=15" alt="David Vance" /></div>
+              <div>
+                <div class="author-name">David Vance</div>
+                <div class="author-role">Lead Portfolio Manager</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================================================================
+       CTA
+  ================================================================ -->
+  <section id="cta">
+    <div class="container-fluid">
+      <!-- Final CTA repeats the main conversion action after the user has seen the page content. -->
+      <div class="cta-box glass reveal">
+        <p class="label-caps section-label mb-3">Ready?</p>
+        <h2 class="cta-title">Showcase Your <span class="gradient-text">Intelligence.</span></h2>
+        <p class="cta-sub">Join 10,000+ professionals building the future of digital presence. It's free to start.</p>
+        <div class="d-flex flex-wrap gap-3 justify-content-center">
+          <a href="builder.html" class="btn-primary-glow">
+            <span class="material-symbols-outlined u-index-1">bolt</span>
+            <span>Create Your Portfolio</span>
+          </a>
+          <a href="contact.html" class="btn-outline-glass">Contact Us</a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================================================================
+       FOOTER
+  ================================================================ -->
+  <footer>
+    <div class="container-fluid">
+      <div class="d-flex flex-wrap align-items-center justify-content-between gap-3">
+        <div>
+          <div class="d-flex align-items-center gap-2 mb-1">
+            <span class="material-symbols-outlined u-index-4">hub</span>
+            <span class="footer-logo-text">NEXUS</span>
+          </div>
+          <div class="footer-copy">© 2026 NEXUS. All rights reserved.</div>
+        </div>
+        <div class="footer-links">
+          <a href="#">Privacy Policy</a>
+          <a href="#">Terms of Service</a>
+          <a href="#">Security</a>
+          <a href="contact.html">Help Center</a>
+        </div>
+      </div>
+    </div>
+  </footer>
+
+  <!-- Bootstrap JS -->
+  <!-- Bootstrap JS enables Bootstrap components if any are used later. -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
+  <!-- main.js contains shared behavior such as theme and mobile navigation. -->
+  <script src="js/main.js"></script>
+
+  <!-- index.js contains landing-page animations and interactive visual effects. -->
+  <script src="js/index.js"></script>
+</body>
+</html>
